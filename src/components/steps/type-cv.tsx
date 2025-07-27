@@ -25,10 +25,15 @@ const cvTypes = [
 export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps) {
   const [selectedType, setSelectedType] = useState(initialData)
 
+  const handleTypeSelect = (typeId: string) => {
+    setSelectedType(typeId)
+    // Call onChange immediately when selection is made
+    onChange(typeId)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedType) {
-      onChange(selectedType)
       next()
     }
   }
@@ -48,7 +53,7 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
               className={`cursor-pointer transition-all hover:shadow-md ${
                 selectedType === type.id ? "ring-2 ring-blue-500 bg-blue-50" : "hover:bg-gray-50"
               }`}
-              onClick={() => setSelectedType(type.id)}
+              onClick={() => handleTypeSelect(type.id)}
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">{type.label}</CardTitle>
@@ -61,9 +66,7 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
         </div>
 
         <div className="flex justify-center">
-          <Button
-          
-          type="submit" disabled={!selectedType} className="min-w-[120px]">
+          <Button type="submit" disabled={!selectedType} className="min-w-[120px]">
             Continue
           </Button>
         </div>

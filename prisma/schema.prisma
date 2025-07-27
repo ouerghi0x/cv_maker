@@ -31,3 +31,16 @@ model CV {
   languages     Json
   createdAt   DateTime @default(now())
 }
+
+model GuestUsage {
+  id          Int       @id @default(autoincrement())
+  ip          String    @unique
+  fingerprint String?   // Optional browser fingerprint
+  location    String?   // Optional location info
+  hasCreatedCV Boolean  @default(false)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime? // Optional expiration (24h from creation)
+
+  @@index([ip, hasCreatedCV])
+  @@index([expiresAt])
+}

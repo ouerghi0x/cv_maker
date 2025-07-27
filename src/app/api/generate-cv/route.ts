@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import crypto from 'crypto'; // Import crypto for unique IDs
-import jwt from 'jsonwebtoken';
-import { saveCV } from '@/lib/logic';
+import { type NextRequest, NextResponse } from "next/server"
+import { GoogleGenerativeAI } from "@google/generative-ai"
+import { promises as fs } from "fs"
+import path from "path"
+import { exec } from "child_process"
+import { promisify } from "util"
+import crypto from "crypto" // Import crypto for unique IDs
+import jwt from "jsonwebtoken"
+import { saveCV } from "@/lib/logic"
+import { getClientIP, canGuestCreateCV, markGuestCVCreated } from "@/lib/guest-utils"
 
+const execAsync = promisify(exec)
 
-const execAsync = promisify(exec);
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
 const promptIntro = `
 You are an expert resume writer and LaTeX author. Generate a fully compilable, minimal, and professional CV document in LaTeX that includes:
@@ -26,91 +26,124 @@ You are an expert resume writer and LaTeX author. Generate a fully compilable, m
 - Output only the LaTeX code, nothing else.
 
 Use the following data to create the CV:
-`;
+`
 
 export async function POST(req: NextRequest) {
   // Generate a unique ID for this request to manage temporary files
-  const requestId = crypto.randomUUID();
-  const tempDir = path.resolve(process.cwd(), `temp_cv_${requestId}`);
-  const texFileName = 'main.tex';
-  const pdfFileName = 'main.pdf';
-  const texFilePath = path.join(tempDir, texFileName);
-  const pdfFilePath = path.join(tempDir, pdfFileName);
+  const requestId = crypto.randomUUID()
+  const tempDir = path.resolve(process.cwd(), `temp_cv_${requestId}`)
+  const texFileName = "main.tex"
+  const pdfFileName = "main.pdf"
+  const texFilePath = path.join(tempDir, texFileName)
+  const pdfFilePath = path.join(tempDir, pdfFileName)
 
   try {
     if (!process.env.GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY is not set in environment variables.');
-      return NextResponse.json(
-        { error: 'Server configuration error: Gemini API key is missing.' },
-        { status: 500 }
-      );
-    }
-    const token = req.cookies.get('auth')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    // Validate the request body
-    const payload = jwt.verify(token, process.env.JWT_SECRET as string);
-    
-    const { userId  } = payload as { userId: number;  };
-    
-    const body = await req.json(); // CvData is expected in the request body
-    //const cvData = body?.data;
-    const cvData = JSON.parse(body?.data || '{}');
-    
-    await saveCV(userId, (cvData));
-    const inputData = body?.data;
-    if (!inputData || typeof inputData !== 'string') {
-      return NextResponse.json({ error: 'Missing or invalid input data. Please provide a string for "data".' }, { status: 400 });
+      console.error("GEMINI_API_KEY is not set in environment variables.")
+      return NextResponse.json({ error: "Server configuration error: Gemini API key is missing." }, { status: 500 })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(`${promptIntro}\n\n${inputData}`);
-    const response = await result.response;
-    let latex = await response.text();
+    const token = req.cookies.get("auth")?.value
+    let userId: number | null = null
+    let isAuthenticated = false
 
-    latex = latex.replace(/```latex|```/gi, '').trim();
-    await fs.mkdir(tempDir, { recursive: true });
-    await fs.writeFile(texFilePath, latex, 'utf8');
-    try {
-      
-      const { stdout, stderr } = await execAsync(`tectonic --outdir ${tempDir} ${texFilePath}`);
-      console.log('Tectonic stdout:', stdout);
-      if (stderr) {
-        console.error('Tectonic stderr:', stderr);
+    // Check if user is authenticated
+    if (token) {
+      try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET as string)
+        const { userId: authUserId } = payload as { userId: number }
+        userId = authUserId
+        isAuthenticated = true
+      } catch {
+        // Token invalid, treat as guest
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error('Tectonic compilation error:', err.message);
+    }
+
+    // Handle guest user restrictions
+    if (!isAuthenticated) {
+      const ip =await  getClientIP()
+      const { canCreate, reason } = await canGuestCreateCV(ip)
+
+      if (!canCreate) {
+        return NextResponse.json(
+          {
+            error: "Guest usage limit reached",
+            message: "You have already created a CV as a guest. Please sign up or log in to continue creating CVs.",
+            requiresAuth: true,
+            reason,
+          },
+          { status: 403 },
+        )
+      }
+    }
+
+    // Validate the request body
+    const body = await req.json()
+    const cvData = JSON.parse(body?.data || "{}")
+
+    // Save CV for authenticated users
+    if (isAuthenticated && userId) {
+      await saveCV(userId, cvData)
+    }
+
+    const inputData = body?.data
+    if (!inputData || typeof inputData !== "string") {
       return NextResponse.json(
-        { error: 'Failed to compile LaTeX document with Tectonic.', details: err.stderr || err.message },
-        { status: 500 }
-      );
+        { error: 'Missing or invalid input data. Please provide a string for "data".' },
+        { status: 400 },
+      )
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+    const result = await model.generateContent(`${promptIntro}\n\n${inputData}`)
+    const response = await result.response
+    let latex = await response.text()
+
+    latex = latex.replace(/```latex|```/gi, "").trim()
+    await fs.mkdir(tempDir, { recursive: true })
+    await fs.writeFile(texFilePath, latex, "utf8")
+
+    try {
+      const { stdout, stderr } = await execAsync(`tectonic --outdir ${tempDir} ${texFilePath}`)
+      console.log("Tectonic stdout:", stdout)
+      if (stderr) {
+        console.error("Tectonic stderr:", stderr)
+      }
+    } catch (err: any) {
+      console.error("Tectonic compilation error:", err.message)
+      return NextResponse.json(
+        { error: "Failed to compile LaTeX document with Tectonic.", details: err.stderr || err.message },
+        { status: 500 },
+      )
+    }
+
+    // Mark guest as having created a CV (only after successful generation)
+    if (!isAuthenticated) {
+      const ip =await  getClientIP()
+      await markGuestCVCreated(ip)
     }
 
     // Read the compiled PDF file
-    const pdfBuffer = await fs.readFile(pdfFilePath);
-    
+    const pdfBuffer = await fs.readFile(pdfFilePath)
+
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=cv.pdf',
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=cv.pdf",
       },
-    });
-
+    })
   } catch (error: unknown) {
-    // Handle any unexpected errors during the process
     return NextResponse.json(
-      { error: 'Internal server error occurred during CV generation.', details: (error as Error).message },
-      { status: 500 }
-    );
+      { error: "Internal server error occurred during CV generation.", details: (error as Error).message },
+      { status: 500 },
+    )
   } finally {
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      console.log(`Temporary directory cleaned up: ${tempDir}`);
+      await fs.rm(tempDir, { recursive: true, force: true })
+      console.log(`Temporary directory cleaned up: ${tempDir}`)
     } catch (cleanupErr) {
-      console.error(`Error cleaning up temporary directory ${tempDir}:`, cleanupErr);
+      console.error(`Error cleaning up temporary directory ${tempDir}:`, cleanupErr)
     }
   }
 }

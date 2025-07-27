@@ -40,7 +40,12 @@ export default function PersonalInfo({ next, prev, onChange, initialData = defau
   const [errors, setErrors] = useState<Partial<PersonalInfoData>>({})
 
   const handleChange = (field: keyof PersonalInfoData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    const newFormData = { ...formData, [field]: value }
+    setFormData(newFormData)
+
+    // Update parent immediately
+    onChange(newFormData)
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
@@ -63,7 +68,6 @@ export default function PersonalInfo({ next, prev, onChange, initialData = defau
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
-      onChange(formData)
       next()
     }
   }

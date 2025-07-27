@@ -28,6 +28,7 @@ export default function Navigation() {
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
+    localStorage.clear();
     router.push('/');
   }
 
