@@ -69,8 +69,8 @@ export default function LandingPage() {
                 </h1>
                 <p className="text-xl text-gray-600 leading-relaxed">
                   Build stunning, customized CVs in minutes. Fill in your info, add your skills, and maybe...{" "}
-                  <em className="text-purple-600 font-medium">enhance</em> your experience a little. We won't tell if
-                  you won't! 😉
+                  <em className="text-purple-600 font-medium">enhance</em> your experience a little. We won&apos;t tell if
+                  you won&apos;t! 😉
                 </p>
               </div>
 
@@ -147,7 +147,7 @@ export default function LandingPage() {
                 <CardTitle>Certifications & Education</CardTitle>
                 <CardDescription>
                   Showcase your qualifications and achievements. That online course you took? Definitely counts as
-                  "advanced training."
+                  &quot;advanced training.&quot;
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -157,8 +157,8 @@ export default function LandingPage() {
                 <Briefcase className="w-12 h-12 text-green-600 mb-4" />
                 <CardTitle>Projects & Experience</CardTitle>
                 <CardDescription>
-                  Highlight your work history and projects. That side project you started? It's now a "successful
-                  entrepreneurial venture."
+                  Highlight your work history and projects. That side project you started? It&apos;s now a &quot;successful
+                  entrepreneurial venture.&quot;
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -168,7 +168,7 @@ export default function LandingPage() {
                 <Globe className="w-12 h-12 text-orange-600 mb-4" />
                 <CardTitle>Languages & Skills</CardTitle>
                 <CardDescription>
-                  List your technical and soft skills. Remember, "basic" knowledge is just "proficient" waiting to
+                  List your technical and soft skills. Remember, &quot;basic&quot; knowledge is just &quot;proficient&quot; waiting to
                   happen.
                 </CardDescription>
               </CardHeader>
@@ -189,7 +189,7 @@ export default function LandingPage() {
                 <Shield className="w-12 h-12 text-indigo-600 mb-4" />
                 <CardTitle>Professional Templates</CardTitle>
                 <CardDescription>
-                  Choose from dozens of ATS-friendly templates that make you look like the professional you're destined
+                  Choose from dozens of ATS-friendly templates that make you look like the professional you&apos;re destined
                   to become.
                 </CardDescription>
               </CardHeader>
@@ -215,7 +215,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold">Fill Your Information</h3>
               <p className="text-gray-600">
-                Enter your details, experience, and skills. Don't worry about being 100% accurate - we're all about
+                Enter your details, experience, and skills. Don&apos;t worry about being 100% accurate - we&apos;re all about
                 potential here!
               </p>
             </div>
@@ -251,7 +251,7 @@ export default function LandingPage() {
           <div className="space-y-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-white">Ready to Transform Your Career?</h2>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Join thousands of professionals who've already discovered the art of strategic CV enhancement. Your dream
+              Join thousands of professionals who&apos;ve already discovered the art of strategic CV enhancement. Your dream
               job is just one click away!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

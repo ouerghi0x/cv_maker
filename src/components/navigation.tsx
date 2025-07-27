@@ -1,9 +1,36 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Navigation() {
+  const [user, setUser] = useState<{ email: string } | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user); // Expected to return: { user: { email: '...' } }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user', error);
+      }
+    }
+
+    fetchUser();
+  }, []);
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+    router.push('/');
+  }
+
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,19 +53,35 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons or User Info */}
           <div className="flex items-center space-x-4">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Login
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm">Register</Button>
-            </Link>
+            {user ? (
+              <>
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                    {user.email[0].toUpperCase()}
+                  </div>
+                  <span>{user.email}</span>
+                </div>
+                <Button size="sm" variant="ghost" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">Register</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
     </nav>
-  )
+  );
 }

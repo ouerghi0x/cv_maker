@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import {  useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,72 +16,11 @@ import PersonalProjects from "./steps/personal-projects"
 import PersonalCertification from "./steps/personal-certification"
 import PersonalLanguages from "./steps/personal-languages"
 import PostJobToPostuleFor from "./steps/post-job"
+import { CVData } from "@/lib/type"
 
-// Define types for all data sections
-type PersonalInfoData = {
-  name: string
-  email: string
-  phone: string
-  address: string
-  linkedin: string
-  github: string
-  website: string
-}
-
-type Education = {
-  degree: string
-  institution: string
-  yearStarted: string
-  yearOfGraduation: string
-}
-
-type Experience = {
-  company: string
-  position: string
-  startDate: string
-  endDate: string
-  description: string
-}
-
-type Skill = {
-  skill: string
-  proficiency: string
-}
-
-type Project = {
-  projectName: string
-  description: string
-  technologies: string
-  link: string
-  startDate: string
-  endDate: string
-}
-
-type Certification = {
-  name: string
-  issuingOrganization: string
-  issueDate: string
-  expirationDate?: string
-}
-
-type Language = {
-  language: string
-  proficiency: string
-}
-
-type CVData = {
-  cvType: string
-  personalInfo: PersonalInfoData
-  education: Education[]
-  experience: Experience[]
-  skills: Skill[]
-  projects: Project[]
-  certifications: Certification[]
-  languages: Language[]
-  jobPost: string
-}
 
 async function generateCV(data: CVData): Promise<Blob | null> {
+  console.log("Generating CV with data:", data)
   try {
     const response = await fetch("/api/generate-cv", {
       method: "POST",
@@ -148,7 +87,7 @@ export default function CvProcess() {
 
   // Navigation functions
   const nextStep = () => {
-    if (currentStep < steps.length - 1) {
+    if (validateCurrentStep() && currentStep < steps.length - 1) {
       setCurrentStep((prev) => prev + 1)
     }
   }
@@ -167,12 +106,14 @@ export default function CvProcess() {
     if (step.required) {
       switch (step.component) {
         case "type-cv":
+          console.log("Validating CV Type:", cvData.cvType)
           if (!cvData.cvType.trim()) errors.push("CV Type is required")
           break
         case "personal-info":
           if (!cvData.personalInfo.name.trim()) errors.push("Name is required")
           if (!cvData.personalInfo.email.trim()) errors.push("Email is required")
           if (!cvData.personalInfo.phone.trim()) errors.push("Phone is required")
+          if (!cvData.personalInfo.address.trim()) errors.push("Address is required")
           break
       }
     }
@@ -180,6 +121,15 @@ export default function CvProcess() {
     setValidationErrors(errors)
     return errors.length === 0
   }
+
+  // Function to validate and proceed to next step
+  const validateAndProceed = () => {
+    if (validateCurrentStep()) {
+      setCurrentStep((prev) => prev + 1)
+    }
+  }
+  
+
 
   // Handle CV generation
   const handleGenerateCV = async () => {
@@ -193,12 +143,12 @@ export default function CvProcess() {
         setValidationErrors(["Failed to generate CV. Please try again."])
       }
     } catch (error) {
-      setValidationErrors(["An error occurred while generating your CV."])
+      setValidationErrors([error instanceof Error ? error.message : "An unexpected error occurred"])
     } finally {
       setIsLoading(false)
     }
   }
-
+  
   // Download PDF function
   const downloadPDF = () => {
     if (pdfBlob) {
@@ -217,13 +167,13 @@ export default function CvProcess() {
   const formSteps = [
     <TypeCV
       key="type-cv"
-      next={nextStep}
+      next={validateAndProceed}
       onChange={(type) => updateData("cvType", type)}
       initialData={cvData.cvType}
     />,
     <PersonalInfo
       key="personal-info"
-      next={nextStep}
+      next={validateAndProceed}
       prev={prevStep}
       onChange={(info) => updateData("personalInfo", info)}
       initialData={cvData.personalInfo}
@@ -278,6 +228,12 @@ export default function CvProcess() {
       initialData={cvData.jobPost}
     />,
   ]
+  useEffect(() => {
+    // Initialize with the first step
+    if(pdfBlob) {
+      setValidationErrors(["CV has been generated. Please review it."])
+    }
+  }, [pdfBlob])
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

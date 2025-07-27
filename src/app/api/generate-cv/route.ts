@@ -5,13 +5,14 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto'; // Import crypto for unique IDs
+import jwt from 'jsonwebtoken';
+import { saveCV } from '@/lib/logic';
+
 
 const execAsync = promisify(exec);
 
-// Initialize Google Generative AI with the API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Define the prompt for the AI model to generate a professional CV in LaTeX
 const promptIntro = `
 You are an expert resume writer and LaTeX author. Generate a fully compilable, minimal, and professional CV document in LaTeX that includes:
 
@@ -37,7 +38,6 @@ export async function POST(req: NextRequest) {
   const pdfFilePath = path.join(tempDir, pdfFileName);
 
   try {
-    // Validate the presence of the Gemini API key
     if (!process.env.GEMINI_API_KEY) {
       console.error('GEMINI_API_KEY is not set in environment variables.');
       return NextResponse.json(
@@ -45,45 +45,43 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-
-    // Parse the request body
-    const body = await req.json();
+    const token = req.cookies.get('auth')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    // Validate the request body
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string);
+    
+    const { userId  } = payload as { userId: number;  };
+    
+    const body = await req.json(); // CvData is expected in the request body
+    //const cvData = body?.data;
+    const cvData = JSON.parse(body?.data || '{}');
+    
+    await saveCV(userId, (cvData));
     const inputData = body?.data;
-
-    // Validate the input data from the request
     if (!inputData || typeof inputData !== 'string') {
       return NextResponse.json({ error: 'Missing or invalid input data. Please provide a string for "data".' }, { status: 400 });
     }
 
-    // Generate LaTeX content using the Gemini AI model
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(`${promptIntro}\n\n${inputData}`);
     const response = await result.response;
     let latex = await response.text();
 
-    // Clean up the AI response: remove code block markers
-    // The previous line to remove "LaTeX" was removed as it could inadvertently remove legitimate text.
     latex = latex.replace(/```latex|```/gi, '').trim();
-
-    // Create a unique temporary directory for this compilation process
     await fs.mkdir(tempDir, { recursive: true });
-
-    // Write the generated LaTeX content to a .tex file
     await fs.writeFile(texFilePath, latex, 'utf8');
-    console.log(`LaTeX file written to: ${texFilePath}`);
-
-    // Compile the .tex file to PDF using Tectonic
-    // Ensure Tectonic is installed and accessible in the server's PATH
     try {
-      console.log(`Attempting to compile LaTeX with Tectonic: tectonic --outdir ${tempDir} ${texFilePath}`);
+      
       const { stdout, stderr } = await execAsync(`tectonic --outdir ${tempDir} ${texFilePath}`);
       console.log('Tectonic stdout:', stdout);
       if (stderr) {
         console.error('Tectonic stderr:', stderr);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Tectonic compilation error:', err.message);
-      // Include stderr in the response for better debugging
       return NextResponse.json(
         { error: 'Failed to compile LaTeX document with Tectonic.', details: err.stderr || err.message },
         { status: 500 }
@@ -92,9 +90,7 @@ export async function POST(req: NextRequest) {
 
     // Read the compiled PDF file
     const pdfBuffer = await fs.readFile(pdfFilePath);
-    console.log(`PDF file read from: ${pdfFilePath}`);
-
-    // Return the PDF file as a response
+    
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
@@ -105,13 +101,11 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     // Handle any unexpected errors during the process
-    console.error('Error generating LaTeX CV or compiling PDF:', error);
     return NextResponse.json(
       { error: 'Internal server error occurred during CV generation.', details: (error as Error).message },
       { status: 500 }
     );
   } finally {
-    // Clean up the temporary directory and its contents
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
       console.log(`Temporary directory cleaned up: ${tempDir}`);

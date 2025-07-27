@@ -28,7 +28,7 @@ export default function PostJobToPostuleFor({ next, prev, onChange, initialData 
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Target Job Position</h2>
-        <p className="text-gray-600">Paste the job description you're applying for to optimize your CV</p>
+        <p className="text-gray-600">Paste the job description you&apos;re applying for to optimize your CV</p>
       </div>
 
       <Card>

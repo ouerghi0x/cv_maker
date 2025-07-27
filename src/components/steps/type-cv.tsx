@@ -61,7 +61,9 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
         </div>
 
         <div className="flex justify-center">
-          <Button type="submit" disabled={!selectedType} className="min-w-[120px]">
+          <Button
+          
+          type="submit" disabled={!selectedType} className="min-w-[120px]">
             Continue
           </Button>
         </div>
