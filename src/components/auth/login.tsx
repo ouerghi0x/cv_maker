@@ -133,7 +133,7 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                &apos;Don't have an account?{" "}
+                &apos;Don&apos;t have an account?{" "} {/* Fixed unescaped apostrophe here */}
                 <Link
                   href="/register"
                   className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"
