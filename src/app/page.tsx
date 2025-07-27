@@ -19,8 +19,8 @@ import {
   LogOut,
 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
+import CVGallery from "@/components/ui/cvgallery"
 
 export default function LandingPage() {
   const [user, setUser] = useState<{ email: string } | null>(null)
@@ -203,13 +203,7 @@ export default function LandingPage() {
 
             <div className="relative">
               <div className="relative z-10">
-                <Image
-                  src="/placeholder.svg?height=600&width=500"
-                  alt="MakerCV Interface Preview"
-                  width={500}
-                  height={600}
-                  className="rounded-2xl shadow-2xl"
-                />
+                <CVGallery />
               </div>
               <div className="absolute -top-4 -right-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
               <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
