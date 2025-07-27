@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -17,11 +17,33 @@ import PersonalCertification from "./steps/personal-certification"
 import PersonalLanguages from "./steps/personal-languages"
 import PostJobToPostuleFor from "./steps/post-job"
 import type { CVData } from "@/lib/type"
+
+// Define the GuestInfo interface here or import it from a shared types file
+// This type should match the structure returned by your /api/guest/check endpoint
+interface GuestInfo {
+  ip: string;
+  location?: string;
+  hasCreatedCV: boolean;
+  createdAt?: string;
+  expiresAt?: string;
+  // Add any other properties your API returns for guestInfo
+  cvCount?: number;
+  maxCvAllowed?: number;
+}
+
+// Assuming GuestRestrictionModalProps is defined in guest-restriction-modal.tsx
+// and imports GuestInfo. If not, you might need to adjust the import path or define it here.
 import GuestRestrictionModal from "./guest-restriction-modal"
 
 const CV_DATA_STORAGE_KEY = "cv_builder_data"
 const CURRENT_STEP_STORAGE_KEY = "cv_builder_current_step"
 
+/**
+ * Generates a CV by sending data to the backend API.
+ * @param data The CV data to be sent.
+ * @returns A Promise that resolves to a Blob (PDF) or null if generation fails.
+ * @throws Error if the API response is not OK, including custom properties for specific error handling.
+ */
 async function generateCV(data: CVData): Promise<Blob | null> {
   console.log("Generating CV with data:", data)
   try {
@@ -32,17 +54,29 @@ async function generateCV(data: CVData): Promise<Blob | null> {
     })
 
     if (!response.ok) {
-      throw new Error("Failed to generate PDF")
+      // Attempt to parse error message from response
+      const errorData = await response.json().catch(() => ({ message: "Failed to generate PDF" }));
+      const errorMessage = errorData.message || "Failed to generate PDF";
+
+      const error = new Error(errorMessage);
+      // Attach status for specific handling in component
+      (error as any).status = response.status; // Type assertion for custom properties
+      (error as any).requiresAuth = response.status === 403; // Custom property for guest restriction
+      throw error;
     }
 
     return await response.blob()
   } catch (error) {
     console.error("Error generating CV:", error)
-    return null
+    throw error; // Re-throw to be caught by the calling function
   }
 }
 
-// Save data to localStorage
+/**
+ * Saves CV data and current step to localStorage.
+ * @param data The CV data to save.
+ * @param step The current step number.
+ */
 const saveToStorage = (data: CVData, step: number) => {
   try {
     localStorage.setItem(CV_DATA_STORAGE_KEY, JSON.stringify(data))
@@ -52,7 +86,10 @@ const saveToStorage = (data: CVData, step: number) => {
   }
 }
 
-// Load data from localStorage
+/**
+ * Loads CV data and current step from localStorage.
+ * @returns An object containing the loaded CV data and step, or null/0 if not found or an error occurs.
+ */
 const loadFromStorage = (): { data: CVData | null; step: number } => {
   try {
     const savedData = localStorage.getItem(CV_DATA_STORAGE_KEY)
@@ -68,7 +105,9 @@ const loadFromStorage = (): { data: CVData | null; step: number } => {
   }
 }
 
-// Clear storage
+/**
+ * Clears all CV builder data from localStorage.
+ */
 const clearStorage = () => {
   try {
     localStorage.removeItem(CV_DATA_STORAGE_KEY)
@@ -87,7 +126,7 @@ export default function CvProcess() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [guestRestriction, setGuestRestriction] = useState<{
     isRestricted: boolean
-    guestInfo?: any
+    guestInfo?: GuestInfo // Using the defined GuestInfo interface
     showModal: boolean
   }>({
     isRestricted: false,
@@ -141,9 +180,20 @@ export default function CvProcess() {
         if (response.ok) {
           const data = await response.json()
           if (!data.isAuthenticated && !data.canCreateCV) {
+            // Ensure data.guestInfo conforms to GuestInfo type
+            const fetchedGuestInfo: GuestInfo = {
+              ip: data.guestInfo?.ip || "unknown", // Provide fallback for required fields
+              hasCreatedCV: data.guestInfo?.hasCreatedCV || false, // Provide fallback
+              location: data.guestInfo?.location,
+              createdAt: data.guestInfo?.createdAt,
+              expiresAt: data.guestInfo?.expiresAt,
+              cvCount: data.guestInfo?.cvCount,
+              maxCvAllowed: data.guestInfo?.maxCvAllowed,
+            };
+
             setGuestRestriction({
               isRestricted: true,
-              guestInfo: data.guestInfo,
+              guestInfo: fetchedGuestInfo,
               showModal: false, // Don't show immediately, show when they try to generate
             })
           }
@@ -158,8 +208,8 @@ export default function CvProcess() {
     }
   }, [isDataLoaded])
 
-  // Step configuration
-  const steps = [
+  // Step configuration - Wrapped in useMemo to prevent re-creation on every render
+  const steps = useMemo(() => [
     { title: "CV Type", component: "type-cv", required: true },
     { title: "Personal Info", component: "personal-info", required: true },
     { title: "Education", component: "education", required: false },
@@ -170,7 +220,7 @@ export default function CvProcess() {
     { title: "Languages", component: "languages", required: false },
     { title: "Job Post", component: "job-post", required: false },
     { title: "Generate CV", component: "generate", required: false },
-  ]
+  ], []); // Empty dependency array means this array is created once
 
   // Memoized update data function to prevent infinite loops
   const updateData = useCallback(<K extends keyof CVData>(section: K, data: CVData[K]) => {
@@ -178,10 +228,17 @@ export default function CvProcess() {
     setValidationErrors([])
   }, [])
 
-  // Validation function - Fixed logic
+  // Validation function
   const validateCurrentStep = useCallback((): boolean => {
     const errors: string[] = []
     const step = steps[currentStep]
+
+    // Handle case where step might be undefined (e.g., currentStep out of bounds)
+    if (!step) {
+      console.error("Invalid current step for validation:", currentStep);
+      setValidationErrors(["Invalid step encountered."]);
+      return false;
+    }
 
     if (!step.required) {
       return true // Optional steps are always valid
@@ -210,11 +267,12 @@ export default function CvProcess() {
           errors.push("Address is required")
         }
         break
+      // Add validation for other required steps if any
     }
 
     setValidationErrors(errors)
     return errors.length === 0
-  }, [currentStep, cvData, steps])
+  }, [currentStep, cvData, steps]) // 'steps' is now a stable reference due to useMemo
 
   // Navigation functions
   const nextStep = useCallback(() => {
@@ -231,12 +289,10 @@ export default function CvProcess() {
 
   // Function to validate and proceed to next step
   const validateAndProceed = useCallback(() => {
-    // Add a small delay to ensure state is fully updated
-    setTimeout(() => {
-      if (validateCurrentStep()) {
-        nextStep()
-      }
-    }, 150)
+    // Removed setTimeout as it's generally not needed for state updates in React
+    if (validateCurrentStep()) {
+      nextStep()
+    }
   }, [validateCurrentStep, nextStep])
 
   // Handle CV generation
@@ -257,21 +313,23 @@ export default function CvProcess() {
       } else {
         setValidationErrors(["Failed to generate CV. Please try again."])
       }
-    } catch (error: any) {
-      // Handle guest restriction error specifically
-      if (error.status === 403 && error.requiresAuth) {
-        // Refresh guest status
-        const response = await fetch("/api/guest/check")
-        if (response.ok) {
-          const data = await response.json()
-          setGuestRestriction({
+    } catch (error: unknown) { // Use unknown for safer type checking
+      console.error("Error generating CV:", error);
+      if (error instanceof Error) {
+        // Safely check for custom properties on the error object
+        const customError = error as { status?: number; requiresAuth?: boolean };
+        if (customError.status === 403 && customError.requiresAuth) {
+          setGuestRestriction((prev) => ({
+            ...prev,
             isRestricted: true,
-            guestInfo: data.guestInfo,
             showModal: true,
-          })
+          }));
+          setValidationErrors(["You need to be logged in or have sufficient guest credits to generate a CV."]);
+        } else {
+          setValidationErrors([error.message]);
         }
       } else {
-        setValidationErrors([error instanceof Error ? error.message : "An unexpected error occurred"])
+        setValidationErrors(["An unexpected error occurred during CV generation."]);
       }
     } finally {
       setIsLoading(false)
@@ -279,7 +337,7 @@ export default function CvProcess() {
   }
 
   // Download PDF function
-  const downloadPDF = () => {
+  const downloadPDF = useCallback(() => {
     if (pdfBlob) {
       const url = URL.createObjectURL(pdfBlob)
       const a = document.createElement("a")
@@ -290,10 +348,10 @@ export default function CvProcess() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     }
-  }
+  }, [pdfBlob, cvData.personalInfo.name]); // Added dependencies
 
   // Reset form
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     clearStorage()
     setCvData({
       cvType: "",
@@ -317,9 +375,9 @@ export default function CvProcess() {
     setCurrentStep(0)
     setPdfBlob(null)
     setValidationErrors([])
-  }
+  }, []); // Empty dependency array as it doesn't depend on any state
 
-  // Memoized onChange handlers for each step
+  // Memoized onChange handlers for each step (already good)
   const handleCvTypeChange = useCallback(
     (type: string) => {
       updateData("cvType", type)
@@ -383,8 +441,8 @@ export default function CvProcess() {
     [updateData],
   )
 
-  // Form steps array
-  const formSteps = [
+  // Form steps array - Memoize this as well because its elements depend on memoized callbacks and state
+  const formSteps = useMemo(() => [
     <TypeCV key="type-cv" next={validateAndProceed} onChange={handleCvTypeChange} initialData={cvData.cvType} />,
     <PersonalInfo
       key="personal-info"
@@ -442,7 +500,11 @@ export default function CvProcess() {
       onChange={handleJobPostChange}
       initialData={cvData.jobPost}
     />,
-  ]
+  ], [
+    validateAndProceed, nextStep, prevStep, handleCvTypeChange, handlePersonalInfoChange,
+    handleEducationChange, handleExperienceChange, handleSkillsChange, handleProjectsChange,
+    handleCertificationsChange, handleLanguagesChange, handleJobPostChange, cvData // cvData is a dependency because initialData is passed to child components
+  ]);
 
   // Don't render until data is loaded
   if (!isDataLoaded) {

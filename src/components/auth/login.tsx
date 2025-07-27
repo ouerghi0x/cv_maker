@@ -40,7 +40,7 @@ export default function LoginPage() {
         const data = await res.json()
         setError(data.error || "Login failed. Please check your credentials.")
       }
-    } catch (err) {
+    } catch (err: unknown) { // Changed 'any' to 'unknown'
       setError("Network error. Please try again.")
     } finally {
       setIsLoading(false)

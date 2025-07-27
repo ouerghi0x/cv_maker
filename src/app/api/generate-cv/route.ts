@@ -11,6 +11,13 @@ import { getClientIP, canGuestCreateCV, markGuestCVCreated } from "@/lib/guest-u
 
 const execAsync = promisify(exec)
 
+// Define an interface for the error object that execAsync might return
+interface ExecError extends Error {
+  stdout: string;
+  stderr: string;
+  code?: number;
+}
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
 const promptIntro = `
@@ -61,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     // Handle guest user restrictions
     if (!isAuthenticated) {
-      const ip =await  getClientIP()
+      const ip = await getClientIP()
       const { canCreate, reason } = await canGuestCreateCV(ip)
 
       if (!canCreate) {
@@ -109,17 +116,18 @@ export async function POST(req: NextRequest) {
       if (stderr) {
         console.error("Tectonic stderr:", stderr)
       }
-    } catch (err: any) {
-      console.error("Tectonic compilation error:", err.message)
+    } catch (err: unknown) { // Use unknown for the catch variable
+      const error = err as ExecError; // Cast to the specific interface
+      console.error("Tectonic compilation error:", error.message);
       return NextResponse.json(
-        { error: "Failed to compile LaTeX document with Tectonic.", details: err.stderr || err.message },
+        { error: "Failed to compile LaTeX document with Tectonic.", details: error.stderr || error.message },
         { status: 500 },
-      )
+      );
     }
 
     // Mark guest as having created a CV (only after successful generation)
     if (!isAuthenticated) {
-      const ip =await  getClientIP()
+      const ip = await getClientIP()
       await markGuestCVCreated(ip)
     }
 

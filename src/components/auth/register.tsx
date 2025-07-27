@@ -62,8 +62,10 @@ export default function RegisterPage() {
         const data = await res.json()
         setError(data.error || "Registration failed. Please try again.")
       }
-    } catch (err) {
-      setError("Network error. Please try again.")
+    } catch (err: unknown) {
+      // Log the error for debugging purposes
+      console.error("Network error during registration:", err);
+      setError("Network error. Please try again.");
     } finally {
       setIsLoading(false)
     }
