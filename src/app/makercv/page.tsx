@@ -1,17 +1,11 @@
-import CvMAKEME from "@/components/cv_process";
+import CvProcess from "@/components/cv-process"
+import Navigation from "@/components/navigation"
 
-
-
-
-
-
-export default function MAKEME() {
-  
-
-  
+export default function MakerCVPage() {
   return (
-    <div>
-      <CvMAKEME />
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      <CvProcess />
     </div>
-  );
+  )
 }
