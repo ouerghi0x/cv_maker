@@ -15,7 +15,10 @@ RUN apt-get update && \
 # Install Node.js deps
 COPY package*.json ./
 RUN npm install
+RUN npm ci
 
+COPY prisma ./prisma
+RUN npx prisma generate
 # Copy source files
 COPY . .
 
