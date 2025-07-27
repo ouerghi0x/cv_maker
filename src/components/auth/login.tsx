@@ -41,7 +41,7 @@ export default function LoginPage() {
         setError(data.error || "Login failed. Please check your credentials.")
       }
     } catch (err: unknown) { // Changed 'any' to 'unknown'
-      setError("Network error. Please try again.")
+      setError(err instanceof Error ? err.message : "Network error. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +133,7 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                Don't have an account?{" "}
+                &apos;Don't have an account?{" "}
                 <Link
                   href="/register"
                   className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"

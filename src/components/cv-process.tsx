@@ -31,6 +31,12 @@ interface GuestInfo {
   maxCvAllowed?: number;
 }
 
+// Define a custom error interface to include status and requiresAuth
+interface CustomCVGenerationError extends Error {
+  status?: number;
+  requiresAuth?: boolean;
+}
+
 // Assuming GuestRestrictionModalProps is defined in guest-restriction-modal.tsx
 // and imports GuestInfo. If not, you might need to adjust the import path or define it here.
 import GuestRestrictionModal from "./guest-restriction-modal"
@@ -58,10 +64,11 @@ async function generateCV(data: CVData): Promise<Blob | null> {
       const errorData = await response.json().catch(() => ({ message: "Failed to generate PDF" }));
       const errorMessage = errorData.message || "Failed to generate PDF";
 
-      const error = new Error(errorMessage);
+      // Create an Error instance and assert its type to CustomCVGenerationError
+      const error: CustomCVGenerationError = new Error(errorMessage);
       // Attach status for specific handling in component
-      (error as any).status = response.status; // Type assertion for custom properties
-      (error as any).requiresAuth = response.status === 403; // Custom property for guest restriction
+      error.status = response.status;
+      error.requiresAuth = response.status === 403;
       throw error;
     }
 
@@ -316,8 +323,8 @@ export default function CvProcess() {
     } catch (error: unknown) { // Use unknown for safer type checking
       console.error("Error generating CV:", error);
       if (error instanceof Error) {
-        // Safely check for custom properties on the error object
-        const customError = error as { status?: number; requiresAuth?: boolean };
+        // Safely check for custom properties on the error object by casting to CustomCVGenerationError
+        const customError = error as CustomCVGenerationError;
         if (customError.status === 403 && customError.requiresAuth) {
           setGuestRestriction((prev) => ({
             ...prev,
