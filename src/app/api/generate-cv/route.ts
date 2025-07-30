@@ -125,7 +125,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Mark guest as having created a CV (only after successful generation)
     if (!isAuthenticated) {
       const ip = await getClientIP()
       await markGuestCVCreated(ip)

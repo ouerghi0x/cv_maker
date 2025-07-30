@@ -10,7 +10,7 @@ export function middleware(req: NextRequest) {
   // Protect /makercv route only
   if (pathname.startsWith('/makercv')) {
     const token = req.cookies.get('auth')?.value;
-
+    
     if (!token) {
       const url = req.nextUrl.clone();
       url.pathname = '/';

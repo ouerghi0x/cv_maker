@@ -23,7 +23,7 @@ export default function CVGallery() {
 
   return (
     // The main container is now fixed to the viewport and has adjusted dimensions
-    <div className="fixed top-1/2 right-4 -translate-y-1/2 w-[550px] h-[400px] bg-white rounded-2xl shadow-2xl overflow-hidden z-50">
+    <div className="absolute top-1/2 right-4 -translate-y-1/2 w-[550px] h-[400px] bg-white rounded-2xl shadow-2xl overflow-hidden z-50">
       {images.map((image, index) => (
         <div
           key={index}

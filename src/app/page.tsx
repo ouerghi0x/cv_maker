@@ -202,7 +202,7 @@ export default function LandingPage() {
             </div>
 
             <div className="relative">
-              <div className="relative z-10">
+              <div className="relative z-10 ">
                 <CVGallery />
               </div>
               <div className="absolute -top-4 -right-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
