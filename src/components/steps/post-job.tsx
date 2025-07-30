@@ -26,14 +26,14 @@ export default function PostJobToPostuleFor({ next, prev, onChange, initialData 
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Target Job Position</h2>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Target Job Position</h2>
         <p className="text-gray-600">Paste the job description you&apos;re applying for to optimize your CV</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <FileText className="w-5 h-5" />
             Job Description
           </CardTitle>
@@ -63,11 +63,13 @@ export default function PostJobToPostuleFor({ next, prev, onChange, initialData 
               </p>
             </div>
 
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={prev}>
+            <div className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
+              <Button type="button" variant="outline" onClick={prev} className="w-full sm:w-auto bg-transparent">
                 Previous
               </Button>
-              <Button type="submit">Save & Continue</Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                Save & Continue
+              </Button>
             </div>
           </form>
         </CardContent>

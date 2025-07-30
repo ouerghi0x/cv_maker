@@ -10,129 +10,126 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, UserPlus, LogIn, Clock, MapPin } from "lucide-react"
+import { AlertTriangle, Clock, MapPin, User } from "lucide-react"
 import Link from "next/link"
 
-type GuestRestrictionModalProps = {
+interface GuestInfo {
+  ip: string
+  location?: string
+  hasCreatedCV: boolean
+  createdAt?: string
+  expiresAt?: string
+  cvCount?: number
+  maxCvAllowed?: number
+}
+
+interface GuestRestrictionModalProps {
   isOpen: boolean
   onClose: () => void
-  guestInfo?: {
-    ip: string
-    location?: string
-    hasCreatedCV: boolean
-    createdAt?: string
-    expiresAt?: string
-  }
+  guestInfo?: GuestInfo
 }
 
 export default function GuestRestrictionModal({ isOpen, onClose, guestInfo }: GuestRestrictionModalProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown"
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+    return new Date(dateString).toLocaleDateString()
   }
 
-  const getTimeUntilExpiry = (expiresAt?: string) => {
-    if (!expiresAt) return null
-
-    const now = new Date()
-    const expiry = new Date(expiresAt)
-    const diff = expiry.getTime() - now.getTime()
-
-    if (diff <= 0) return "Expired"
-
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m remaining`
-    }
-    return `${minutes}m remaining`
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return "Unknown"
+    return new Date(dateString).toLocaleString()
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-            <AlertTriangle className="w-6 h-6 text-orange-600" />
-          </div>
-          <DialogTitle className="text-xl font-bold text-gray-900">Free Trial Used</DialogTitle>
-          <DialogDescription className="text-gray-600 mt-2">
-            You&apos;ve already created a CV as a guest user. To continue using MakerCV and create unlimited CVs, please sign
-            up for a free account.
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-orange-600">
+            <AlertTriangle className="w-5 h-5" />
+            Guest Limit Reached
+          </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            You&apos;ve reached the limit for guest CV generation. Create an account to continue building unlimited CVs.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Guest Info */}
-        {guestInfo && (
+        <div className="space-y-4 py-4">
+          {/* Guest Info */}
           <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-            <h4 className="font-medium text-gray-900 text-sm">Your Session Info:</h4>
-            <div className="space-y-2 text-xs text-gray-600">
-              <div className="flex items-center justify-between">
-                <span>IP Address:</span>
-                <Badge variant="secondary" className="text-xs">
-                  {guestInfo.ip}
-                </Badge>
+            <h4 className="font-medium text-gray-900 mb-3">Guest Session Info</h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-600">IP:</span>
+                <span className="font-mono text-gray-900">{guestInfo?.ip || "Unknown"}</span>
               </div>
-              {guestInfo.location && (
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    Location:
-                  </span>
-                  <span>{guestInfo.location}</span>
+
+              {guestInfo?.location && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">Location:</span>
+                  <span className="text-gray-900">{guestInfo.location}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between">
-                <span>CV Created:</span>
-                <span>{formatDate(guestInfo.createdAt)}</span>
+
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-600">Session Started:</span>
+                <span className="text-gray-900">{formatTime(guestInfo?.createdAt)}</span>
               </div>
-              {guestInfo.expiresAt && (
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Reset:
-                  </span>
-                  <span className="text-orange-600 font-medium">{getTimeUntilExpiry(guestInfo.expiresAt)}</span>
+
+              {guestInfo?.expiresAt && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">Expires:</span>
+                  <span className="text-gray-900">{formatTime(guestInfo.expiresAt)}</span>
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* Benefits of signing up */}
-        <div className="bg-blue-50 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 text-sm mb-2">✨ Free Account Benefits:</h4>
-          <ul className="text-xs text-blue-800 space-y-1">
-            <li>• Create unlimited CVs</li>
-            <li>• Save and edit your CVs anytime</li>
-            <li>• Access to premium templates</li>
-            <li>• Cloud storage for your data</li>
-            <li>• Priority customer support</li>
-          </ul>
+            {/* CV Usage Stats */}
+            <div className="pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">CVs Generated:</span>
+                <Badge variant={guestInfo?.hasCreatedCV ? "destructive" : "secondary"}>
+                  {guestInfo?.cvCount || 0} / {guestInfo?.maxCvAllowed || 1}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Benefits of Creating Account */}
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-3">✨ Create Account Benefits</h4>
+            <ul className="space-y-2 text-sm text-blue-800">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                Unlimited CV generation
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                Save and edit your CVs anytime
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                Access to premium templates
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                AI-powered CV optimization
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col space-y-2">
-          <Link href="/register" className="w-full">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Create Free Account
-            </Button>
-          </Link>
-          <Link href="/login" className="w-full">
-            <Button variant="outline" className="w-full bg-transparent">
-              <LogIn className="w-4 h-4 mr-2" />I Already Have an Account
-            </Button>
-          </Link>
-          <Button variant="ghost" onClick={onClose} className="w-full text-gray-500">
-            Maybe Later
+        <DialogFooter className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto bg-transparent">
+            Continue as Guest
           </Button>
+          <Link href="/register" className="w-full sm:w-auto">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700">Create Free Account</Button>
+          </Link>
         </DialogFooter>
       </DialogContent>
     </Dialog>

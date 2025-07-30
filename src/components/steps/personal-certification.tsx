@@ -54,8 +54,8 @@ export default function PersonalCertification({ next, prev, onChange, initialDat
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Certifications</h2>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Certifications</h2>
         <p className="text-gray-600">Add your professional certifications and licenses</p>
       </div>
 
@@ -64,7 +64,7 @@ export default function PersonalCertification({ next, prev, onChange, initialDat
         {certificationEntries.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Award className="w-5 h-5" />
                 Added Certifications ({certificationEntries.length})
               </CardTitle>
@@ -72,9 +72,9 @@ export default function PersonalCertification({ next, prev, onChange, initialDat
             <CardContent className="space-y-4">
               {certificationEntries.map((cert, index) => (
                 <div key={index} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{cert.name}</h4>
-                    <p className="text-gray-600">{cert.issuingOrganization}</p>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-900 truncate">{cert.name}</h4>
+                    <p className="text-gray-600 truncate">{cert.issuingOrganization}</p>
                     <p className="text-sm text-gray-500">
                       Issued: {cert.issueDate}
                       {cert.expirationDate && ` • Expires: ${cert.expirationDate}`}
@@ -85,7 +85,7 @@ export default function PersonalCertification({ next, prev, onChange, initialDat
                     variant="ghost"
                     size="sm"
                     onClick={() => removeCertification(index)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 ml-2 flex-shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -98,7 +98,7 @@ export default function PersonalCertification({ next, prev, onChange, initialDat
         {/* Add New Certification */}
         <Card>
           <CardHeader>
-            <CardTitle>Add New Certification</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Add New Certification</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -153,11 +153,13 @@ export default function PersonalCertification({ next, prev, onChange, initialDat
 
         {/* Navigation */}
         <form onSubmit={handleSubmit}>
-          <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={prev}>
+          <div className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
+            <Button type="button" variant="outline" onClick={prev} className="w-full sm:w-auto bg-transparent">
               Previous
             </Button>
-            <Button type="submit">Save & Continue</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Save & Continue
+            </Button>
           </div>
         </form>
       </div>

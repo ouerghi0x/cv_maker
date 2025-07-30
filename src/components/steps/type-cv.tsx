@@ -39,14 +39,14 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Choose Your CV Type</h2>
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Choose Your CV Type</h2>
         <p className="text-gray-600">Select the type that best matches your career goals</p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
           {cvTypes.map((type) => (
             <Card
               key={type.id}
@@ -56,7 +56,7 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
               onClick={() => handleTypeSelect(type.id)}
             >
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{type.label}</CardTitle>
+                <CardTitle className="text-base sm:text-lg">{type.label}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600">{type.description}</p>
@@ -66,7 +66,7 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
         </div>
 
         <div className="flex justify-center">
-          <Button type="submit" disabled={!selectedType} className="min-w-[120px]">
+          <Button type="submit" disabled={!selectedType} className="min-w-[120px] w-full sm:w-auto">
             Continue
           </Button>
         </div>

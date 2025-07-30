@@ -40,7 +40,8 @@ export default function LoginPage() {
         const data = await res.json()
         setError(data.error || "Login failed. Please check your credentials.")
       }
-    } catch (err: unknown) { // Changed 'any' to 'unknown'
+    } catch (err: unknown) {
+      // Changed 'any' to 'unknown'
       setError(err instanceof Error ? err.message : "Network error. Please try again.")
     } finally {
       setIsLoading(false)
@@ -55,8 +56,8 @@ export default function LoginPage() {
             <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
               <Lock className="w-6 h-6 text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Welcome back</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">Welcome back</CardTitle>
+            <CardDescription className="text-gray-600 text-sm sm:text-base">
               Sign in to your account to continue building your CV
             </CardDescription>
           </CardHeader>
@@ -65,7 +66,7 @@ export default function LoginPage() {
             <CardContent className="space-y-4">
               {error && (
                 <Alert variant="destructive" className="border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                  <AlertDescription className="text-red-800 text-sm">{error}</AlertDescription>
                 </Alert>
               )}
 
@@ -133,7 +134,7 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                &apos;Don&apos;t have an account?{" "} {/* Fixed unescaped apostrophe here */}
+                &apos;Don&apos;t have an account? {/* Fixed unescaped apostrophe here */}
                 <Link
                   href="/register"
                   className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"

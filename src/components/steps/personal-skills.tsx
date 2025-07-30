@@ -58,8 +58,8 @@ export default function PersonalSkills({ next, prev, onChange, initialData = [] 
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Skills</h2>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Skills</h2>
         <p className="text-gray-600">Add your technical and professional skills</p>
       </div>
 
@@ -68,17 +68,17 @@ export default function PersonalSkills({ next, prev, onChange, initialData = [] 
         {skillEntries.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Zap className="w-5 h-5" />
                 Added Skills ({skillEntries.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {skillEntries.map((skill, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{skill.skill}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{skill.skill}</p>
                       <p className="text-sm text-gray-600 capitalize">{skill.proficiency}</p>
                     </div>
                     <Button
@@ -86,7 +86,7 @@ export default function PersonalSkills({ next, prev, onChange, initialData = [] 
                       variant="ghost"
                       size="sm"
                       onClick={() => removeSkill(index)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 ml-2 flex-shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -100,7 +100,7 @@ export default function PersonalSkills({ next, prev, onChange, initialData = [] 
         {/* Add New Skill */}
         <Card>
           <CardHeader>
-            <CardTitle>Add New Skill</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Add New Skill</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -146,11 +146,13 @@ export default function PersonalSkills({ next, prev, onChange, initialData = [] 
 
         {/* Navigation */}
         <form onSubmit={handleSubmit}>
-          <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={prev}>
+          <div className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
+            <Button type="button" variant="outline" onClick={prev} className="w-full sm:w-auto bg-transparent">
               Previous
             </Button>
-            <Button type="submit">Save & Continue</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Save & Continue
+            </Button>
           </div>
         </form>
       </div>

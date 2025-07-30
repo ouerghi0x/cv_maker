@@ -64,8 +64,8 @@ export default function RegisterPage() {
       }
     } catch (err: unknown) {
       // Log the error for debugging purposes
-      console.error("Network error during registration:", err);
-      setError("Network error. Please try again.");
+      console.error("Network error during registration:", err)
+      setError("Network error. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -79,15 +79,17 @@ export default function RegisterPage() {
             <div className="mx-auto w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-4">
               <UserPlus className="w-6 h-6 text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Create account</CardTitle>
-            <CardDescription className="text-gray-600">Join us to start building your professional CV</CardDescription>
+            <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">Create account</CardTitle>
+            <CardDescription className="text-gray-600 text-sm sm:text-base">
+              Join us to start building your professional CV
+            </CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
                 <Alert variant="destructive" className="border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                  <AlertDescription className="text-red-800 text-sm">{error}</AlertDescription>
                 </Alert>
               )}
 

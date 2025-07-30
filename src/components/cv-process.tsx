@@ -21,20 +21,20 @@ import type { CVData } from "@/lib/type"
 // Define the GuestInfo interface here or import it from a shared types file
 // This type should match the structure returned by your /api/guest/check endpoint
 interface GuestInfo {
-  ip: string;
-  location?: string;
-  hasCreatedCV: boolean;
-  createdAt?: string;
-  expiresAt?: string;
+  ip: string
+  location?: string
+  hasCreatedCV: boolean
+  createdAt?: string
+  expiresAt?: string
   // Add any other properties your API returns for guestInfo
-  cvCount?: number;
-  maxCvAllowed?: number;
+  cvCount?: number
+  maxCvAllowed?: number
 }
 
 // Define a custom error interface to include status and requiresAuth
 interface CustomCVGenerationError extends Error {
-  status?: number;
-  requiresAuth?: boolean;
+  status?: number
+  requiresAuth?: boolean
 }
 
 // Assuming GuestRestrictionModalProps is defined in guest-restriction-modal.tsx
@@ -61,21 +61,21 @@ async function generateCV(data: CVData): Promise<Blob | null> {
 
     if (!response.ok) {
       // Attempt to parse error message from response
-      const errorData = await response.json().catch(() => ({ message: "Failed to generate PDF" }));
-      const errorMessage = errorData.message || "Failed to generate PDF";
+      const errorData = await response.json().catch(() => ({ message: "Failed to generate PDF" }))
+      const errorMessage = errorData.message || "Failed to generate PDF"
 
       // Create an Error instance and assert its type to CustomCVGenerationError
-      const error: CustomCVGenerationError = new Error(errorMessage);
+      const error: CustomCVGenerationError = new Error(errorMessage)
       // Attach status for specific handling in component
-      error.status = response.status;
-      error.requiresAuth = response.status === 403;
-      throw error;
+      error.status = response.status
+      error.requiresAuth = response.status === 403
+      throw error
     }
 
     return await response.blob()
   } catch (error) {
     console.error("Error generating CV:", error)
-    throw error; // Re-throw to be caught by the calling function
+    throw error // Re-throw to be caught by the calling function
   }
 }
 
@@ -196,7 +196,7 @@ export default function CvProcess() {
               expiresAt: data.guestInfo?.expiresAt,
               cvCount: data.guestInfo?.cvCount,
               maxCvAllowed: data.guestInfo?.maxCvAllowed,
-            };
+            }
 
             setGuestRestriction({
               isRestricted: true,
@@ -216,18 +216,21 @@ export default function CvProcess() {
   }, [isDataLoaded])
 
   // Step configuration - Wrapped in useMemo to prevent re-creation on every render
-  const steps = useMemo(() => [
-    { title: "CV Type", component: "type-cv", required: true },
-    { title: "Personal Info", component: "personal-info", required: true },
-    { title: "Education", component: "education", required: false },
-    { title: "Experience", component: "experience", required: false },
-    { title: "Skills", component: "skills", required: false },
-    { title: "Projects", component: "projects", required: false },
-    { title: "Certifications", component: "certifications", required: false },
-    { title: "Languages", component: "languages", required: false },
-    { title: "Job Post", component: "job-post", required: false },
-    { title: "Generate CV", component: "generate", required: false },
-  ], []); // Empty dependency array means this array is created once
+  const steps = useMemo(
+    () => [
+      { title: "CV Type", component: "type-cv", required: true },
+      { title: "Personal Info", component: "personal-info", required: true },
+      { title: "Education", component: "education", required: false },
+      { title: "Experience", component: "experience", required: false },
+      { title: "Skills", component: "skills", required: false },
+      { title: "Projects", component: "projects", required: false },
+      { title: "Certifications", component: "certifications", required: false },
+      { title: "Languages", component: "languages", required: false },
+      { title: "Job Post", component: "job-post", required: false },
+      { title: "Generate CV", component: "generate", required: false },
+    ],
+    [],
+  ) // Empty dependency array means this array is created once
 
   // Memoized update data function to prevent infinite loops
   const updateData = useCallback(<K extends keyof CVData>(section: K, data: CVData[K]) => {
@@ -242,9 +245,9 @@ export default function CvProcess() {
 
     // Handle case where step might be undefined (e.g., currentStep out of bounds)
     if (!step) {
-      console.error("Invalid current step for validation:", currentStep);
-      setValidationErrors(["Invalid step encountered."]);
-      return false;
+      console.error("Invalid current step for validation:", currentStep)
+      setValidationErrors(["Invalid step encountered."])
+      return false
     }
 
     if (!step.required) {
@@ -320,23 +323,24 @@ export default function CvProcess() {
       } else {
         setValidationErrors(["Failed to generate CV. Please try again."])
       }
-    } catch (error: unknown) { // Use unknown for safer type checking
-      console.error("Error generating CV:", error);
+    } catch (error: unknown) {
+      // Use unknown for safer type checking
+      console.error("Error generating CV:", error)
       if (error instanceof Error) {
         // Safely check for custom properties on the error object by casting to CustomCVGenerationError
-        const customError = error as CustomCVGenerationError;
+        const customError = error as CustomCVGenerationError
         if (customError.status === 403 && customError.requiresAuth) {
           setGuestRestriction((prev) => ({
             ...prev,
             isRestricted: true,
             showModal: true,
-          }));
-          setValidationErrors(["You need to be logged in or have sufficient guest credits to generate a CV."]);
+          }))
+          setValidationErrors(["You need to be logged in or have sufficient guest credits to generate a CV."])
         } else {
-          setValidationErrors([error.message]);
+          setValidationErrors([error.message])
         }
       } else {
-        setValidationErrors(["An unexpected error occurred during CV generation."]);
+        setValidationErrors(["An unexpected error occurred during CV generation."])
       }
     } finally {
       setIsLoading(false)
@@ -355,7 +359,7 @@ export default function CvProcess() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     }
-  }, [pdfBlob, cvData.personalInfo.name]); // Added dependencies
+  }, [pdfBlob, cvData.personalInfo.name]) // Added dependencies
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -382,7 +386,7 @@ export default function CvProcess() {
     setCurrentStep(0)
     setPdfBlob(null)
     setValidationErrors([])
-  }, []); // Empty dependency array as it doesn't depend on any state
+  }, []) // Empty dependency array as it doesn't depend on any state
 
   // Memoized onChange handlers for each step (already good)
   const handleCvTypeChange = useCallback(
@@ -449,69 +453,82 @@ export default function CvProcess() {
   )
 
   // Form steps array - Memoize this as well because its elements depend on memoized callbacks and state
-  const formSteps = useMemo(() => [
-    <TypeCV key="type-cv" next={validateAndProceed} onChange={handleCvTypeChange} initialData={cvData.cvType} />,
-    <PersonalInfo
-      key="personal-info"
-      next={validateAndProceed}
-      prev={prevStep}
-      onChange={handlePersonalInfoChange}
-      initialData={cvData.personalInfo}
-    />,
-    <PersonalEducation
-      key="education"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleEducationChange}
-      initialData={cvData.education}
-    />,
-    <PersonalExperience
-      key="experience"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleExperienceChange}
-      initialData={cvData.experience}
-    />,
-    <PersonalSkills
-      key="skills"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleSkillsChange}
-      initialData={cvData.skills}
-    />,
-    <PersonalProjects
-      key="projects"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleProjectsChange}
-      initialData={cvData.projects}
-    />,
-    <PersonalCertification
-      key="certifications"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleCertificationsChange}
-      initialData={cvData.certifications}
-    />,
-    <PersonalLanguages
-      key="languages"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleLanguagesChange}
-      initialData={cvData.languages}
-    />,
-    <PostJobToPostuleFor
-      key="job-post"
-      next={nextStep}
-      prev={prevStep}
-      onChange={handleJobPostChange}
-      initialData={cvData.jobPost}
-    />,
-  ], [
-    validateAndProceed, nextStep, prevStep, handleCvTypeChange, handlePersonalInfoChange,
-    handleEducationChange, handleExperienceChange, handleSkillsChange, handleProjectsChange,
-    handleCertificationsChange, handleLanguagesChange, handleJobPostChange, cvData // cvData is a dependency because initialData is passed to child components
-  ]);
+  const formSteps = useMemo(
+    () => [
+      <TypeCV key="type-cv" next={validateAndProceed} onChange={handleCvTypeChange} initialData={cvData.cvType} />,
+      <PersonalInfo
+        key="personal-info"
+        next={validateAndProceed}
+        prev={prevStep}
+        onChange={handlePersonalInfoChange}
+        initialData={cvData.personalInfo}
+      />,
+      <PersonalEducation
+        key="education"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleEducationChange}
+        initialData={cvData.education}
+      />,
+      <PersonalExperience
+        key="experience"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleExperienceChange}
+        initialData={cvData.experience}
+      />,
+      <PersonalSkills
+        key="skills"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleSkillsChange}
+        initialData={cvData.skills}
+      />,
+      <PersonalProjects
+        key="projects"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleProjectsChange}
+        initialData={cvData.projects}
+      />,
+      <PersonalCertification
+        key="certifications"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleCertificationsChange}
+        initialData={cvData.certifications}
+      />,
+      <PersonalLanguages
+        key="languages"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleLanguagesChange}
+        initialData={cvData.languages}
+      />,
+      <PostJobToPostuleFor
+        key="job-post"
+        next={nextStep}
+        prev={prevStep}
+        onChange={handleJobPostChange}
+        initialData={cvData.jobPost}
+      />,
+    ],
+    [
+      validateAndProceed,
+      nextStep,
+      prevStep,
+      handleCvTypeChange,
+      handlePersonalInfoChange,
+      handleEducationChange,
+      handleExperienceChange,
+      handleSkillsChange,
+      handleProjectsChange,
+      handleCertificationsChange,
+      handleLanguagesChange,
+      handleJobPostChange,
+      cvData, // cvData is a dependency because initialData is passed to child components
+    ],
+  )
 
   // Don't render until data is loaded
   if (!isDataLoaded) {
@@ -526,18 +543,19 @@ export default function CvProcess() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+        <div className="mb-6 sm:mb-8">
+          <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-900">CV Builder Progress</h3>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 {lastSaved && (
                   <>
                     <Save className="w-3 h-3" />
-                    <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+                    <span className="hidden sm:inline">Last saved: {lastSaved.toLocaleTimeString()}</span>
+                    <span className="sm:hidden">Saved</span>
                   </>
                 )}
               </div>
@@ -557,10 +575,10 @@ export default function CvProcess() {
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar - Step Indicator */}
-          <div className="w-80 flex-shrink-0">
-            <Card className="sticky top-8">
+          <div className="w-full lg:w-80 lg:flex-shrink-0">
+            <Card className="lg:sticky lg:top-8">
               <CardHeader>
                 <CardTitle className="text-lg">Steps</CardTitle>
                 <p className="text-sm text-gray-600">{steps[currentStep]?.title}</p>
@@ -624,7 +642,7 @@ export default function CvProcess() {
           {/* Main Content Area */}
           <div className="flex-1">
             <Card>
-              <CardContent className="p-8">
+              <CardContent className="p-4 sm:p-6 lg:p-8">
                 {/* Validation Errors */}
                 {validationErrors.length > 0 && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -644,7 +662,7 @@ export default function CvProcess() {
                   // Generate CV Step
                   <div className="text-center space-y-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                         {pdfBlob ? "CV Generated Successfully!" : "Ready to Generate Your CV"}
                       </h2>
                       <p className="text-gray-600">
@@ -656,7 +674,7 @@ export default function CvProcess() {
 
                     {!pdfBlob && (
                       <>
-                        <div className="bg-gray-50 p-6 rounded-lg text-left max-w-2xl mx-auto">
+                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg text-left max-w-2xl mx-auto">
                           <h3 className="font-semibold text-gray-900 mb-4">CV Summary:</h3>
                           <div className="space-y-2 text-sm text-gray-600">
                             <p>
@@ -689,11 +707,15 @@ export default function CvProcess() {
                           </div>
                         </div>
 
-                        <div className="flex justify-center space-x-4">
-                          <Button variant="outline" onClick={prevStep}>
+                        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                          <Button variant="outline" onClick={prevStep} className="w-full sm:w-auto bg-transparent">
                             Back to Edit
                           </Button>
-                          <Button onClick={handleGenerateCV} disabled={isLoading} className="min-w-[140px]">
+                          <Button
+                            onClick={handleGenerateCV}
+                            disabled={isLoading}
+                            className="min-w-[140px] w-full sm:w-auto"
+                          >
                             {isLoading ? (
                               <>
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -709,20 +731,22 @@ export default function CvProcess() {
 
                     {pdfBlob && (
                       <div className="space-y-4">
-                        <div className="bg-gray-50 p-6 rounded-lg">
+                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
                           <iframe
                             src={URL.createObjectURL(pdfBlob)}
-                            className="w-full h-96 border rounded"
+                            className="w-full h-64 sm:h-96 border rounded"
                             title="Generated CV Preview"
                           />
                         </div>
 
-                        <div className="flex justify-center space-x-4">
-                          <Button variant="outline" onClick={resetForm}>
+                        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                          <Button variant="outline" onClick={resetForm} className="w-full sm:w-auto bg-transparent">
                             Create Another CV
                           </Button>
-                          <Button onClick={downloadPDF}>Download PDF</Button>
-                          <Button variant="outline" onClick={() => setPdfBlob(null)}>
+                          <Button onClick={downloadPDF} className="w-full sm:w-auto">
+                            Download PDF
+                          </Button>
+                          <Button variant="outline" onClick={() => setPdfBlob(null)} className="w-full sm:w-auto">
                             Generate Again
                           </Button>
                         </div>

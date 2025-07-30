@@ -65,8 +65,8 @@ export default function PersonalProjects({ next, prev, onChange, initialData = [
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Personal Projects</h2>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Personal Projects</h2>
         <p className="text-gray-600">Showcase your personal and side projects</p>
       </div>
 
@@ -75,7 +75,7 @@ export default function PersonalProjects({ next, prev, onChange, initialData = [
         {projectEntries.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <FolderOpen className="w-5 h-5" />
                 Added Projects ({projectEntries.length})
               </CardTitle>
@@ -83,21 +83,21 @@ export default function PersonalProjects({ next, prev, onChange, initialData = [
             <CardContent className="space-y-4">
               {projectEntries.map((project, index) => (
                 <div key={index} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold text-gray-900">{project.projectName}</h4>
+                      <h4 className="font-semibold text-gray-900 truncate">{project.projectName}</h4>
                       {project.link && (
                         <a
                           href={project.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-700"
+                          className="text-blue-600 hover:text-blue-700 flex-shrink-0"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 mb-2">{project.description}</p>
+                    <p className="text-sm text-gray-700 mb-2 line-clamp-2">{project.description}</p>
                     <p className="text-sm text-gray-600 mb-1">
                       <strong>Technologies:</strong> {project.technologies}
                     </p>
@@ -110,7 +110,7 @@ export default function PersonalProjects({ next, prev, onChange, initialData = [
                     variant="ghost"
                     size="sm"
                     onClick={() => removeProject(index)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 ml-2 flex-shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -123,7 +123,7 @@ export default function PersonalProjects({ next, prev, onChange, initialData = [
         {/* Add New Project */}
         <Card>
           <CardHeader>
-            <CardTitle>Add New Project</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Add New Project</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -206,11 +206,13 @@ export default function PersonalProjects({ next, prev, onChange, initialData = [
 
         {/* Navigation */}
         <form onSubmit={handleSubmit}>
-          <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={prev}>
+          <div className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
+            <Button type="button" variant="outline" onClick={prev} className="w-full sm:w-auto bg-transparent">
               Previous
             </Button>
-            <Button type="submit">Save & Continue</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Save & Continue
+            </Button>
           </div>
         </form>
       </div>

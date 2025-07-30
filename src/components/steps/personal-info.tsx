@@ -83,22 +83,22 @@ export default function PersonalInfo({ next, prev, onChange, initialData = defau
   ]
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Personal Information</h2>
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Personal Information</h2>
         <p className="text-gray-600">Tell us about yourself</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Contact Details</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Contact Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {inputFields.map(({ key, label, icon: Icon, required, type }) => (
                 <div key={key} className={key === "address" ? "md:col-span-2" : ""}>
-                  <Label htmlFor={key} className="flex items-center gap-2 mb-2">
+                  <Label htmlFor={key} className="flex items-center gap-2 mb-2 text-sm sm:text-base">
                     <Icon className="w-4 h-4" />
                     {label}
                     {required && <span className="text-red-500">*</span>}
@@ -116,11 +116,13 @@ export default function PersonalInfo({ next, prev, onChange, initialData = defau
               ))}
             </div>
 
-            <div className="flex justify-between pt-6">
-              <Button type="button" variant="outline" onClick={prev}>
+            <div className="flex flex-col sm:flex-row justify-between pt-6 space-y-3 sm:space-y-0">
+              <Button type="button" variant="outline" onClick={prev} className="w-full sm:w-auto bg-transparent">
                 Previous
               </Button>
-              <Button type="submit">Save & Continue</Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                Save & Continue
+              </Button>
             </div>
           </form>
         </CardContent>

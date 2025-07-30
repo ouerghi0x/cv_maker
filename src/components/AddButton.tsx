@@ -1,16 +1,27 @@
+"use client"
 
-'use client';
-type AddButtonProps = {
-  text: string;
-  style: string;
-  onClick: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
-};
+import type React from "react"
 
-function AddButton( props : AddButtonProps) {
-  return (
-    <button className= {`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${props.style}`} onClick={props.onClick}>
-      {props.text}
-    </button>
-  );
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+
+interface AddButtonProps {
+  onClick: () => void
+  disabled?: boolean
+  children: React.ReactNode
+  className?: string
 }
-export default AddButton;
+
+export default function AddButton({ onClick, disabled = false, children, className = "" }: AddButtonProps) {
+  return (
+    <Button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full flex items-center justify-center gap-2 ${className}`}
+    >
+      <Plus className="w-4 h-4" />
+      {children}
+    </Button>
+  )
+}

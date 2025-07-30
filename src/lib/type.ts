@@ -1,4 +1,3 @@
-
 // Define types for all data sections
 type PersonalInfoData = {
   name: string
