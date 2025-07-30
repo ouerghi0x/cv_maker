@@ -13,6 +13,7 @@
     "@next/font": "^14.2.15",
     "@prisma/client": "latest",
     "@prisma/extension-accelerate": "^2.0.2",
+    "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-select": "latest",
