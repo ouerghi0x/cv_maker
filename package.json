@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "latest",
+    "@next/font": "^14.2.15",
     "@prisma/client": "latest",
     "@prisma/extension-accelerate": "^2.0.2",
     "@radix-ui/react-dialog": "latest",
