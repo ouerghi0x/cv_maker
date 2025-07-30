@@ -30,10 +30,6 @@ interface GuestRestrictionModalProps {
 }
 
 export default function GuestRestrictionModal({ isOpen, onClose, guestInfo }: GuestRestrictionModalProps) {
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Unknown"
-    return new Date(dateString).toLocaleDateString()
-  }
 
   const formatTime = (dateString?: string) => {
     if (!dateString) return "Unknown"
