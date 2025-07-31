@@ -65,3 +65,9 @@ export type {
    
   CVData 
 };
+interface GeneratedEmailOutput {
+  subject: string;
+  body: string;
+  to: string;
+}
+export type { GeneratedEmailOutput };

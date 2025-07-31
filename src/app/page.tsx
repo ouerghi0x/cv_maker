@@ -94,10 +94,19 @@ export default function LandingPage() {
                     </div>
                     <span className="hidden lg:inline">{user.email}</span>
                   </div>
-                  <Link href="/makercv">
-                    <Button size="sm">Go to CV Builder</Button>
+                  <Link href="/makercv" 
+                  >
+                    <Button 
+                    style={{
+                      cursor: "pointer",
+                    }}
+                    size="sm">Go to CV Builder</Button>
                   </Link>
-                  <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <Button variant="ghost" size="sm" onClick={handleLogout}
+                  style={{
+                      cursor: "pointer",
+                    }}
+                  >
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </Button>

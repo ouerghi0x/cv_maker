@@ -1,6 +1,72 @@
-const data={
+const DataTest={
   "cvType": "data-scientist",
-  "jobPost": "Looking for a data scientist with experience in machine learning and Python.",
+  "jobPost": `Job Title: Software Engineer (Backend) – Remote
+Company: TechNova Solutions
+Location: Remote (USA preferred)
+Type: Full-time
+Email to apply: careers@technovasolutions.com
+
+Hiring Manager:
+Alex Morgan
+
+Engineering Manager
+TechNova Solutions
+123 Innovation Drive
+San Francisco, CA 94107
+
+Job Description:
+TechNova Solutions is seeking a passionate and skilled Backend Software Engineer to join our fast-growing engineering team. You will work on scalable, high-performance backend services and APIs that power our cloud-based platform used by thousands of customers.
+
+Responsibilities:
+Design, develop, test, deploy, maintain, and improve backend services written in Node.js and Python
+
+Build RESTful and GraphQL APIs consumed by frontend and third-party services
+
+Collaborate with product managers, frontend developers, and QA engineers
+
+Optimize system performance and scalability
+
+Participate in code reviews and advocate for best practices
+
+Write unit and integration tests using modern testing frameworks
+
+Ensure systems are secure, resilient, and observable
+
+Requirements:
+2+ years of experience building backend systems in a production environment
+
+Strong proficiency in JavaScript/TypeScript and/or Python
+
+Experience with databases (PostgreSQL, MongoDB, Redis)
+
+Familiarity with cloud platforms (AWS, GCP, or Azure)
+
+Solid understanding of RESTful APIs and microservice architectures
+
+Experience with CI/CD pipelines and version control (Git)
+
+Excellent problem-solving skills and a collaborative mindset
+
+Nice to Have:
+Experience with GraphQL
+
+Knowledge of containerization (Docker, Kubernetes)
+
+Exposure to serverless architectures (e.g., AWS Lambda)
+
+Contributions to open-source projects
+
+Benefits:
+Competitive salary and equity package
+
+Fully remote work with flexible hours
+
+Health, dental, and vision insurance
+
+Professional development budget
+
+Generous PTO policy
+`,
   "personalInfo": {
     "name": "Mohamed Aziz Werghi",
     "email": "werghia.1@gmail.com",
@@ -55,4 +121,4 @@ const data={
     { "language": "Arabic", "proficiency": "Native" }
   ]
 }
-export default data;
+export default DataTest;

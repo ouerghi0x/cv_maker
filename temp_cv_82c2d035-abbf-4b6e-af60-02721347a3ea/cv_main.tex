@@ -1,0 +1,149 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[letterpaper, margin=0.75in]{geometry} % Smaller margins for more content
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{ragged2e}
+\usepackage{fontawesome5} % For modern icons
+
+% --- COLORS ---
+\definecolor{primary}{HTML}{0056B3} % A professional blue
+\definecolor{darkgray}{HTML}{333333}
+\definecolor{lightgray}{HTML}{666666}
+
+% --- FONT CONFIGURATION (Optional, but good for consistency) ---
+% \usepackage{roboto} % For Roboto font, often used in modern designs. Requires fontspec and XeLaTeX/LuaLaTeX.
+% For pdflatex, stick to default or use Latin Modern which is good.
+% If using fontspec for custom fonts, swap documentclass to 'scrartcl' or 'article' and compile with XeLaTeX/LuaLaTeX.
+% Sticking to standard for Tectonic compatibility without extra font packages.
+
+% --- HYPERLINK SETUP ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=primary,
+    citecolor=primary,
+    filecolor=primary,
+    pdftitle={Mohamed aziz werghi - Data Scientist CV},
+    pdfauthor={Mohamed aziz werghi}
+}
+
+% --- SECTION STYLING ---
+\titleformat{\section}
+  {\vspace{-4pt}\normalfont\Large\textbf{\color{darkgray}}}
+  {}{0em}
+  {\hrule\vspace{4pt}}[\vspace{4pt}\hrule]
+
+\titlespacing{\section}{0pt}{8pt}{4pt} % Adjust spacing around sections
+
+% --- LIST STYLING ---
+\setlist[itemize]{
+    itemsep=2pt, % Space between items
+    parsep=0pt,  % Space between paragraphs in an item
+    partopsep=0pt, % Space before the first item if list follows a paragraph
+    topsep=4pt,  % Space above the list
+    leftmargin=1.5em % Indent bullets
+}
+
+% --- COMMANDS ---
+\newcommand{\hrfill}{\vspace{2pt}\hrulefill\vspace{2pt}} % Horizontal rule for sections
+
+\begin{document}
+\RaggedRight % Aligns text to the left margin, ragged right
+
+% ==============================================================================
+% CONTACT INFORMATION
+% ==============================================================================
+\begin{center}
+    \vspace{-15pt} % Reduce space at the top of the document
+    \color{darkgray}
+    \textbf{\Huge Mohamed aziz werghi}
+    \vspace{2pt}
+
+    \small
+    \href{mailto:werghia.1@gmail.com}{\faEnvelope\ werghia.1@gmail.com} \quad $|$ \quad
+    \faPhone\ 29836507 \quad $|$ \quad
+    \faMapMarkerAlt\ Tunis, Ben Arous \quad $|$ \quad
+    \href{https://gemini.google.com/app/3fa3e864002f45d4}{\faLinkedin\ LinkedIn} \quad $|$ \quad
+    \href{https://gemini.google.com/app/3fa3e864002f45d4}{\faGithub\ GitHub} \quad $|$ \quad
+    \href{https://gemini.google.com/app/3fa3e864002f45d4}{\faGlobe\ Portfolio}
+\end{center}
+\vspace{-8pt} % Reduce space after contact info
+
+% ==============================================================================
+% SUMMARY
+% ==============================================================================
+\section*{Summary}
+\vspace{-4pt}
+\small
+Highly motivated and analytical Data Scientist with a strong foundation in machine learning, statistical modeling, and data visualization. Proven ability to translate complex data into actionable insights, optimize business processes, and drive data-driven decision-making. Seeking to leverage expertise in predictive analytics and large-scale data processing to contribute to innovative projects and solve challenging real-world problems.
+
+% ==============================================================================
+% SKILLS
+% ==============================================================================
+\section*{Skills}
+\vspace{-4pt}
+\small
+\textbf{Programming:} Python, R, SQL, Scala \\
+\textbf{Machine Learning:} Supervised/Unsupervised Learning, Deep Learning, NLP, Time Series Analysis, Scikit-learn, TensorFlow, Keras, PyTorch \\
+\textbf{Data Analysis \& Visualization:} Pandas, NumPy, Matplotlib, Seaborn, Plotly, Tableau, Power BI \\
+\textbf{Big Data Technologies:} Apache Spark, Hadoop, AWS (S3, EC2, SageMaker), Google Cloud Platform (BigQuery, AI Platform) \\
+\textbf{Databases:} PostgreSQL, MySQL, MongoDB, Cassandra \\
+\textbf{Tools \& Other:} Git, Docker, Jupyter Notebooks, Agile Methodologies
+
+% ==============================================================================
+% WORK EXPERIENCE
+% ==============================================================================
+\section*{Work Experience}
+\vspace{-4pt}
+
+\textbf{Senior Data Scientist} \hfill \textbf{Jan 2021 – Present} \\
+Tech Solutions Inc., New York, NY
+\begin{itemize}
+    \item Developed and deployed machine learning models, improving prediction accuracy by 15\% and reducing operational costs by 10\%.
+    \item Designed and implemented A/B tests to optimize user engagement, leading to a 20\% increase in conversion rates.
+    \item Built scalable data pipelines using Apache Spark and AWS, processing over 1TB of data daily.
+    \item Collaborated with cross-functional teams to define KPIs and deliver data-driven insights that informed product strategy.
+    \item Mentored junior data scientists on best practices in model development and deployment.
+\end{itemize}
+
+\vspace{6pt}
+
+\textbf{Data Scientist} \hfill \textbf{Aug 2018 – Dec 2020} \\
+FinTech Innovations, Boston, MA
+\begin{itemize}
+    \item Analyzed large datasets to identify trends and patterns, contributing to a 5\% improvement in fraud detection rates.
+    \item Developed predictive models for customer churn, resulting in targeted retention strategies and a 7\% reduction in churn.
+    \item Automated data extraction and reporting processes, saving 10+ hours per week for the analytics team.
+    \item Presented complex analytical findings to stakeholders, translating technical details into clear business recommendations.
+\end{itemize}
+
+% ==============================================================================
+% EDUCATION
+% ==============================================================================
+\section*{Education}
+\vspace{-4pt}
+
+\textbf{Master of Science in Data Science} \hfill \textbf{2017} \\
+University of Data Excellence, City, State
+\begin{itemize}
+    \item Thesis: "Predictive Modeling for Dynamic Resource Allocation in Cloud Environments"
+    \item Relevant Coursework: Advanced Machine Learning, Big Data Analytics, Statistical Inference, Natural Language Processing
+\end{itemize}
+
+\vspace{6pt}
+
+\textbf{Bachelor of Science in Computer Science} \hfill \textbf{2015} \\
+National University of Technology, City, State
+\begin{itemize}
+    \item Minors: Mathematics, Statistics
+    \item Graduated with Honors
+\end{itemize}
+
+% ==============================================================================
+% END DOCUMENT
+% ==============================================================================
+\end{document}

@@ -1,48 +1,26 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { GoogleGenerativeAI } from "@google/generative-ai"
 import { promises as fs } from "fs"
-import path from "path"
 import { exec } from "child_process"
 import { promisify } from "util"
-import crypto from "crypto" // Import crypto for unique IDs
 import jwt from "jsonwebtoken"
-import { saveCV } from "@/lib/logic"
+import { Createfiles, saveDataUser } from "@/lib/logic"
 import { getClientIP, canGuestCreateCV, markGuestCVCreated } from "@/lib/guest-utils"
+import { promptIA } from "@/lib/prompt"
+import genAI from "@/lib/ai"
 
 const execAsync = promisify(exec)
 
-// Define an interface for the error object that execAsync might return
 interface ExecError extends Error {
   stdout: string;
   stderr: string;
   code?: number;
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
-
-const promptIntro = `
-You are an expert resume writer and LaTeX author. Generate a fully compilable, minimal, and professional CV document in LaTeX that includes:
-
-- A complete LaTeX document structure (\\documentclass, \\usepackage, \\begin{document}, \\end{document}).
-- Use only common LaTeX packages compatible with Tectonic (e.g., article, geometry, hyperref, enumitem).
-- Clear, readable formatting suitable for recruiters.
-- Include standard sections such as Contact Information, Summary, Skills, Work Experience, and Education.
-- Use formal and professional language, focusing on relevant skills and quantifiable achievements.
-- Employ strong action verbs and concise bullet points.
-- Avoid raw ampersands (&) outside of tables; escape them as \\&.
-- Output only the LaTeX code, nothing else.
-
-Use the following data to create the CV:
-`
+const promptIntro = promptIA.make_cv
 
 export async function POST(req: NextRequest) {
   // Generate a unique ID for this request to manage temporary files
-  const requestId = crypto.randomUUID()
-  const tempDir = path.resolve(process.cwd(), `temp_cv_${requestId}`)
-  const texFileName = "main.tex"
-  const pdfFileName = "main.pdf"
-  const texFilePath = path.join(tempDir, texFileName)
-  const pdfFilePath = path.join(tempDir, pdfFileName)
+  const { tempDir, texFilePath, pdfFilePath } = Createfiles('PDF')
 
   try {
     if (!process.env.GEMINI_API_KEY) {
@@ -87,24 +65,26 @@ export async function POST(req: NextRequest) {
     // Validate the request body
     const body = await req.json()
     const cvData = JSON.parse(body?.data || "{}")
+    const prompt = body?.prompt || promptIntro
 
     // Save CV for authenticated users
     if (isAuthenticated && userId) {
-      await saveCV(userId, cvData)
+      await saveDataUser(userId, cvData)
     }
 
     const inputData = body?.data
+    
     if (!inputData || typeof inputData !== "string") {
       return NextResponse.json(
         { error: 'Missing or invalid input data. Please provide a string for "data".' },
         { status: 400 },
       )
     }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
-    const result = await model.generateContent(`${promptIntro}\n\n${inputData}`)
-    const response = await result.response
-    let latex = await response.text()
+    
+    const model = genAI
+    const result = await model.generateContent(`${prompt}\n\n${inputData}`)
+    const response =  result.response
+    let latex =  response.text()
 
     latex = latex.replace(/```latex|```/gi, "").trim()
     await fs.mkdir(tempDir, { recursive: true })
@@ -132,7 +112,7 @@ export async function POST(req: NextRequest) {
 
     // Read the compiled PDF file
     const pdfBuffer = await fs.readFile(pdfFilePath)
-
+    //await fs.rm(tempDir, { recursive: true, force: true })
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
@@ -145,12 +125,13 @@ export async function POST(req: NextRequest) {
       { error: "Internal server error occurred during CV generation.", details: (error as Error).message },
       { status: 500 },
     )
-  } finally {
+  } 
+  finally {
+    // Clean up temporary files if they exist
     try {
       await fs.rm(tempDir, { recursive: true, force: true })
-      console.log(`Temporary directory cleaned up: ${tempDir}`)
-    } catch (cleanupErr) {
-      console.error(`Error cleaning up temporary directory ${tempDir}:`, cleanupErr)
+    } catch (cleanupError) {
+      console.error("Failed to clean up temporary files:", cleanupError)
     }
   }
 }

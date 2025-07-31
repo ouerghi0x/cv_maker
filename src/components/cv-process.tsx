@@ -40,6 +40,9 @@ interface CustomCVGenerationError extends Error {
 // Assuming GuestRestrictionModalProps is defined in guest-restriction-modal.tsx
 // and imports GuestInfo. If not, you might need to adjust the import path or define it here.
 import GuestRestrictionModal from "./guest-restriction-modal"
+import DataTest from "@/lib/test"
+import { promptIA } from "@/lib/prompt"
+import SelectSource from "./ui/select_source"
 
 const CV_DATA_STORAGE_KEY = "cv_builder_data"
 const CURRENT_STEP_STORAGE_KEY = "cv_builder_current_step"
@@ -50,23 +53,18 @@ const CURRENT_STEP_STORAGE_KEY = "cv_builder_current_step"
  * @returns A Promise that resolves to a Blob (PDF) or null if generation fails.
  * @throws Error if the API response is not OK, including custom properties for specific error handling.
  */
-async function generateCV(data: CVData): Promise<Blob | null> {
-  console.log("Generating CV with data:", data)
+async function generateDocument(data: CVData,api:string,prompt:string): Promise<Blob | null> {
   try {
-    const response = await fetch("/api/generate-cv", {
+    const response = await fetch(api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(data) }),
+      body: JSON.stringify({ data: JSON.stringify(DataTest), prompt }),
     })
 
     if (!response.ok) {
-      // Attempt to parse error message from response
       const errorData = await response.json().catch(() => ({ message: "Failed to generate PDF" }))
       const errorMessage = errorData.message || "Failed to generate PDF"
-
-      // Create an Error instance and assert its type to CustomCVGenerationError
       const error: CustomCVGenerationError = new Error(errorMessage)
-      // Attach status for specific handling in component
       error.status = response.status
       error.requiresAuth = response.status === 403
       throw error
@@ -75,7 +73,7 @@ async function generateCV(data: CVData): Promise<Blob | null> {
     return await response.blob()
   } catch (error) {
     console.error("Error generating CV:", error)
-    throw error // Re-throw to be caught by the calling function
+    throw error 
   }
 }
 
@@ -123,11 +121,15 @@ const clearStorage = () => {
     console.error("Failed to clear localStorage:", error)
   }
 }
-
+interface CreateFilesResult {
+  message: string[]
+  blobfile: Blob | null
+  index?: number // Optional index for tracking which file this is
+}
 export default function CvProcess() {
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
+  const [pdfBlob, setPdfBlob] = useState<CreateFilesResult[]>([])
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [isDataLoaded, setIsDataLoaded] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -139,7 +141,7 @@ export default function CvProcess() {
     isRestricted: false,
     showModal: false,
   })
-
+  const [index, setIndex] = useState(0)
   const [cvData, setCvData] = useState<CVData>({
     cvType: "",
     personalInfo: {
@@ -160,7 +162,6 @@ export default function CvProcess() {
     jobPost: "",
   })
 
-  // Load saved data on component mount
   useEffect(() => {
     const { data, step } = loadFromStorage()
     if (data) {
@@ -171,7 +172,6 @@ export default function CvProcess() {
     setIsDataLoaded(true)
   }, [])
 
-  // Auto-save data whenever cvData or currentStep changes
   useEffect(() => {
     if (isDataLoaded) {
       saveToStorage(cvData, currentStep)
@@ -179,7 +179,6 @@ export default function CvProcess() {
     }
   }, [cvData, currentStep, isDataLoaded])
 
-  // Check guest status on component mount
   useEffect(() => {
     async function checkGuestStatus() {
       try {
@@ -215,7 +214,6 @@ export default function CvProcess() {
     }
   }, [isDataLoaded])
 
-  // Step configuration - Wrapped in useMemo to prevent re-creation on every render
   const steps = useMemo(
     () => [
       { title: "CV Type", component: "type-cv", required: true },
@@ -297,17 +295,13 @@ export default function CvProcess() {
     }
   }, [currentStep])
 
-  // Function to validate and proceed to next step
   const validateAndProceed = useCallback(() => {
-    // Removed setTimeout as it's generally not needed for state updates in React
     if (validateCurrentStep()) {
       nextStep()
     }
   }, [validateCurrentStep, nextStep])
 
-  // Handle CV generation
   const handleGenerateCV = async () => {
-    // Check guest restrictions before generating
     if (guestRestriction.isRestricted) {
       setGuestRestriction((prev) => ({ ...prev, showModal: true }))
       return
@@ -315,10 +309,17 @@ export default function CvProcess() {
 
     setIsLoading(true)
     try {
-      const blob = await generateCV(cvData)
+      const blob = await generateDocument(cvData,'/api/generate-pdf',promptIA.make_cv)
       if (blob) {
-        setPdfBlob(blob)
-        // Clear storage after successful generation
+        setPdfBlob(
+          [{
+            message: [" CV Generated Successfully! ","Your professional CV is ready for download"],
+            blobfile: blob,
+            index: 0, // Set index to 0 for the first generated file
+          }] as CreateFilesResult[] 
+        )
+        setIndex(0) // Reset index to 0 after generation
+        setValidationErrors([])
         clearStorage()
       } else {
         setValidationErrors(["Failed to generate CV. Please try again."])
@@ -348,20 +349,23 @@ export default function CvProcess() {
   }
 
   // Download PDF function
-  const downloadPDF = useCallback(() => {
-    if (pdfBlob) {
-      const url = URL.createObjectURL(pdfBlob)
+  const downloadPDF = (i:number,type_file_download:string) => {
+    if (pdfBlob.length === 0 || !pdfBlob[i] || !pdfBlob[i].blobfile) {
+      setValidationErrors(["No PDF available to download. Please generate a CV first."])
+      return
+    }
+    console.log(pdfBlob.length)
+    if (pdfBlob[i].blobfile) {
+      const url = URL.createObjectURL(pdfBlob[i].blobfile)
       const a = document.createElement("a")
       a.href = url
-      a.download = `${cvData.personalInfo.name || "CV"}.pdf`
+      a.download = `${cvData.personalInfo.name || "CV"}.${type_file_download}.pdf`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     }
-  }, [pdfBlob, cvData.personalInfo.name]) // Added dependencies
-
-  // Reset form
+  } 
   const resetForm = useCallback(() => {
     clearStorage()
     setCvData({
@@ -384,9 +388,11 @@ export default function CvProcess() {
       jobPost: "",
     })
     setCurrentStep(0)
-    setPdfBlob(null)
+    setPdfBlob(
+      pdfBlob.slice(1,  ) // Keep the first element if needed, or reset to empty array
+    )
     setValidationErrors([])
-  }, []) // Empty dependency array as it doesn't depend on any state
+  }, [pdfBlob]) // Empty dependency array as it doesn't depend on any state
 
   // Memoized onChange handlers for each step (already good)
   const handleCvTypeChange = useCallback(
@@ -663,16 +669,16 @@ export default function CvProcess() {
                   <div className="text-center space-y-6">
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                        {pdfBlob ? "CV Generated Successfully!" : "Ready to Generate Your CV"}
+                        {pdfBlob.length > 0 && pdfBlob[index].message.length >0 && pdfBlob[index].message[0]  ? pdfBlob[index].message[0] : "Ready to Generate Your CV"}
                       </h2>
                       <p className="text-gray-600">
-                        {pdfBlob
-                          ? "Your professional CV is ready for download"
-                          : "Review your information and generate your professional CV"}
+                        {pdfBlob.length > 0 && pdfBlob[index].message.length >0 && pdfBlob[index].message[1]
+                          ? pdfBlob[index].message[1] || "Your CV is ready for download."
+                          : "Review your information and generate your  CV, or create a cover letter , email template."}
                       </p>
                     </div>
 
-                    {!pdfBlob && (
+                    {pdfBlob.length == 0 && (
                       <>
                         <div className="bg-gray-50 p-4 sm:p-6 rounded-lg text-left max-w-2xl mx-auto">
                           <h3 className="font-semibold text-gray-900 mb-4">CV Summary:</h3>
@@ -729,29 +735,98 @@ export default function CvProcess() {
                       </>
                     )}
 
-                    {pdfBlob && (
-                      <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
+                    {pdfBlob.length > 0 && (
+                    <div className="space-y-6"> {/* Increased space-y for better separation */}
+                      <div className="bg-gray-50 p-4 sm:p-6 rounded-lg shadow-md"> {/* Added shadow for depth */}
+                        {pdfBlob.length > 0 && pdfBlob[index].blobfile && (
                           <iframe
-                            src={URL.createObjectURL(pdfBlob)}
-                            className="w-full h-64 sm:h-96 border rounded"
-                            title="Generated CV Preview"
+                            src={URL.createObjectURL(pdfBlob[index].blobfile)}
+                            className="w-full h-64 sm:h-96 border border-gray-300 rounded-md shadow-inner" // Added border and shadow-inner for better embed look
+                            title="Generated Document Preview" // More general title
                           />
-                        </div>
+                        )}
+                      </div>
 
-                        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                          <Button variant="outline" onClick={resetForm} className="w-full sm:w-auto bg-transparent">
-                            Create Another CV
-                          </Button>
-                          <Button onClick={downloadPDF} className="w-full sm:w-auto">
-                            Download PDF
-                          </Button>
-                          <Button variant="outline" onClick={() => setPdfBlob(null)} className="w-full sm:w-auto">
-                            Generate Again
-                          </Button>
+                      {/* Section for Document Actions (Download, Get Cover Letter, Get Email) */}
+                      <div className="p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-100"> {/* New container for document actions */}
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Document Actions</h3>
+                        <div className="flex flex-col sm:flex-row justify-center items-center gap-4"> {/* Centered and stacked on small screens */}
+                          {/* Download Document Section */}
+                          <div className="flex-1 min-w-[200px] max-w-md"> {/* Allows select to take reasonable width */}
+                            <label htmlFor="download-select" className="sr-only">Select Source to Download</label>
+                            <SelectSource downloadPDF={downloadPDF} />
+                          </div>
+
+                          {/* Action Buttons for additional documents/templates */}
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1 justify-center">
+                            <Button
+                              variant="outline"
+                              onClick={async () => {
+                                const blob = await generateDocument(cvData, '/api/generate-pdf', promptIA.generate_cover_letter);
+                                if (blob) {
+                                  let found = false;
+                                  for (let i = 0; i < pdfBlob.length; i++) {
+                                    if (!pdfBlob[i].blobfile) {
+                                      setIndex(i);
+                                      found = true;
+                                      break;
+                                    }
+                                  }
+                                  if (!found) {
+                                    setIndex(pdfBlob.length);
+                                  }
+                                  setPdfBlob(
+                                    [
+                                      ...pdfBlob,
+                                      {
+                                        message: ["Cover Letter generated successfully", "Your cover letter is ready for download."],
+                                        blobfile: blob,
+                                        index: pdfBlob.length, // Add at the end of the list
+                                      },
+                                    ] as CreateFilesResult[]
+                                  );
+                                  setValidationErrors([]);
+                                } else {
+                                  setValidationErrors(["Failed to generate Cover Letter. Please try again."]);
+                                }
+                              }}
+                              className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700" // Highlighted as a primary "get" action
+                            >
+                              Get Cover Letter
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              onClick={() => console.log('Generate Email Template')}
+                              className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700" // Highlighted as another "get" action
+                            >
+                              Get Email Template
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    )}
+
+                      {/* Section for Generation Controls */}
+                      <div className="flex flex-wrap justify-center gap-3 sm:gap-4 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-100"> {/* New container for generation actions */}
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 w-full text-center">Generation Controls</h3>
+                        <Button
+                          variant="outline"
+                          onClick={resetForm}
+                          className="w-full sm:w-auto border-blue-500 text-blue-700 hover:bg-blue-50" // Clear action, distinct styling
+                        >
+                          Create Another CV
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => setPdfBlob(pdfBlob.slice(1))}
+                          className="w-full sm:w-auto border-purple-500 text-purple-700 hover:bg-purple-50" // "Generate Again" implies modifying current document list
+                        >
+                          Generate Again
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   </div>
                 ) : null}
               </CardContent>
