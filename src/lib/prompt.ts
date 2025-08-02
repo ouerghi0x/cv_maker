@@ -23,45 +23,87 @@ You are an expert resume writer and LaTeX author, specializing in creating moder
     * Escape all raw ampersands (&) as \\&, except within specific LaTeX environments where they serve as column separators (e.g., tables).
 -   **Output Format:** Provide ONLY the complete LaTeX code. Do not include any conversational text, explanations, or extraneous characters outside of the LaTeX document itself.
 
-Use the following data to create the CV:
+Use the following data to create the CV:data
 `
 const prompt_make_email_to_postule_for_job = `
 You are an expert email writer. Your task is to generate a professional job application email and return its components in a structured JSON format.
 
-**Output Format:**
-Provide ONLY a JSON object with the following keys:
--   \`subject\`: The complete email subject line.
--   \`body\`: The complete email body content.
--   \`to\`: The recipient's email address or name (e.g., "[Hiring Manager Email]" or "[Hiring Manager Name]" if email is unknown, or "[Company Name]" if both are unknown).
+---
 
-**Email Content Guidelines:**
+**Input Format (Structured Data):**
+You will receive structured data in the following format:
 
--   **Subject:** "Application for [Job Title] Position"
--   **Body:**
-    * **Opening:** Start with a polite greeting to the hiring manager (e.g., "Dear [Hiring Manager Name]," or "Dear Hiring Team," if the name is unknown).
-    * **Introduction:** Clearly state the position you are applying for, where you saw the advertisement, and express your keen interest.
-    * **Highlight Relevance:** Briefly explain why you are a strong candidate for this role. Connect your key skills and relevant experience (mentioning 1-2 specific, impactful achievements) directly to the job requirements. Refer to your attached CV for more details.
-    * **Company Interest:** Briefly mention why you are interested in *this specific company* (e.g., its mission, values, or recent projects).
-    * **Call to Action:** Express your eagerness for an interview to discuss how your qualifications can benefit the company.
-    * **Closing:** Use a professional closing (e.g., "Sincerely," or "Best regards,") followed by your full name.
-    * **Attachment Reminder:** Include a line stating that your CV is attached for their review.
+\`\`\`ts
+type CVData = {
+  cvType: string
+  personalInfo: {
+    name: string
+    email: string
+    phone: string
+    address: string
+    linkedin: string
+    github: string
+    website: string
+  }
+  education: Array<{ degree: string, institution: string, yearStarted: string, yearOfGraduation: string }>
+  experience: Array<{ company: string, position: string, startDate: string, endDate: string, description: string }>
+  skills: Array<{ skill: string, proficiency: string }>
+  projects: Array<{ projectName: string, description: string, technologies: string, link: string, startDate: string, endDate: string }>
+  certifications: Array<{ name: string, issuingOrganization: string, issueDate: string, expirationDate?: string }>
+  languages: Array<{ language: string, proficiency: string }>
+  jobPost: string // JSON string containing job title, company name, hiring manager name/email, etc.
+}
+\`\`\`
 
-**Important:**
--   Fill in all information if it is available in the input data.
--   Only use clear, bracketed placeholders (e.g., [Your Name], [Job Title], [Company Name], [Hiring Manager Email]) for information that is *explicitly missing* from the input data and is required to complete the email.
--   Extract the \`to\` field from the provided data. Prioritize [Hiring Manager Email], then [Hiring Manager Name], then [Company Name].
+From this data, you must extract:
+- **Job Title** from \`jobPost\`
+- **Company Name** from \`jobPost\`
+- **Hiring Manager Name or Email** from \`jobPost\`
+- **Sender Name** from \`personalInfo.name\`
+- **Sender Email** from \`personalInfo.email\`
+- **Relevant Skills** from \`skills[]\` (pick top 1–2)
+- **Impactful Achievements** from \`experience[]\` or \`projects[]\` (summarize 1–2 quantifiable contributions)
+- **Company Interest Reasons** from \`jobPost\` if provided, or infer from company info (e.g., industry, reputation)
 
-**Data Input:** The AI will receive the following data points to inform the email. The AI should use these to populate the email directly, rather than leaving them as placeholders, unless the data point is explicitly empty:
--   [Job Title]
--   [Company Name]
--   [Hiring Manager Name (if known, otherwise use "Hiring Team")]
--   [Hiring Manager Email (if known)]
--   [Source of Advertisement]
--   [Your Name]
--   [Your 1-2 most relevant skills/areas of expertise]
--   [Your 1-2 most impactful, quantifiable achievements from past roles]
--   [Specific reasons for your interest in the company (e.g., company values, recent projects, industry leadership)]
-`
+---
+
+**Output Format (Must be a complete JSON object):**
+\`\`\`json
+{
+  "emailSubject": "...",
+  "emailBody": "...",
+  "destinationEmail": "...",
+  "senderEmail": "..."
+}
+\`\`\`
+
+---
+
+**Email Construction Instructions:**
+
+- **Subject:**  
+  Format: \`Application for [Job Title] Position\` (replace with actual job title)
+
+- **Body Must Include (All Fields Resolved, No Brackets):**
+  1. **Greeting:** "Dear [Hiring Manager Name]," or "Dear Hiring Team," if name is missing
+  2. **Intro:** State the job title and where it was found; show interest
+  3. **Fit:** Mention 1–2 relevant skills and 1–2 achievements (e.g., “In my role at X, I led Y that achieved Z.”)
+  4. **Company Interest:** Why you want to join this company (from jobPost or inferred)
+  5. **Call to Action:** Express interest in interview
+  6. **Closing:** e.g., “Best regards, [Your Name]”
+  7. **CV Mention:** e.g., “Please find my CV attached for your review.”
+
+---
+
+**Strict Rules:**
+✅ Fill in **all** fields using the input data  
+✅ **DO NOT** leave any placeholders like \`[Your Name]\`, \`[Company Name]\`, or \`[Job Title]\`  
+✅ Only fall back to a placeholder (like "Dear Hiring Team") **if the value is entirely missing**  
+✅ Extract \`destinationEmail\` from \`jobPost.hiringManagerEmail\`; if missing, fallback to hiringManagerName or company name
+
+Generate a complete, clear, and professional email accordingly.
+`;
+
 const prompt_generate_cover_letter = `
 You are an expert cover letter writer and LaTeX author, specializing in crafting compelling, tailored, and professional cover letters that effectively highlight a candidate's qualifications and enthusiasm. Generate a **fully compilable, professional cover letter document in LaTeX** based on the provided data, adhering to the following structure and guidelines:
 

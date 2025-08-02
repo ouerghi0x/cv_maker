@@ -39,37 +39,37 @@ export default function TypeCV({ next, onChange, initialData = "" }: TypeCVProps
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-6 sm:mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Choose Your CV Type</h2>
-        <p className="text-gray-600">Select the type that best matches your career goals</p>
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-4 sm:mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Choose Your CV Type</h2>
+      <p className="text-gray-600 text-sm sm:text-base">Select the type that best matches your career goals</p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-          {cvTypes.map((type) => (
-            <Card
-              key={type.id}
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                selectedType === type.id ? "ring-2 ring-blue-500 bg-blue-50" : "hover:bg-gray-50"
-              }`}
-              onClick={() => handleTypeSelect(type.id)}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base sm:text-lg">{type.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">{type.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6">
+        {cvTypes.map((type) => (
+        <Card
+          key={type.id}
+          className={`cursor-pointer transition-all hover:shadow-md ${
+          selectedType === type.id ? "ring-2 ring-blue-500 bg-blue-50" : "hover:bg-gray-50"
+          }`}
+          onClick={() => handleTypeSelect(type.id)}
+        >
+          <CardHeader className="pb-1">
+          <CardTitle className="text-sm sm:text-base">{type.label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+          <p className="text-xs sm:text-sm text-gray-600">{type.description}</p>
+          </CardContent>
+        </Card>
+        ))}
+      </div>
 
-        <div className="flex justify-center">
-          <Button type="submit" disabled={!selectedType} className="min-w-[120px] w-full sm:w-auto">
-            Continue
-          </Button>
-        </div>
+      <div className="flex justify-center">
+        <Button type="submit" disabled={!selectedType} className="min-w-[100px] w-full sm:w-auto">
+        Continue
+        </Button>
+      </div>
       </form>
     </div>
   )

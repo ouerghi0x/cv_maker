@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, JSX, SetStateAction } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Circle, Loader2, Save } from "lucide-react"
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
 
 // Import all step components
 import TypeCV from "./steps/type-cv"
@@ -16,7 +17,7 @@ import PersonalProjects from "./steps/personal-projects"
 import PersonalCertification from "./steps/personal-certification"
 import PersonalLanguages from "./steps/personal-languages"
 import PostJobToPostuleFor from "./steps/post-job"
-import type { CVData } from "@/lib/type"
+import type { CVData, EmailProps, outputAiEmail } from "@/lib/type"
 
 // Define the GuestInfo interface here or import it from a shared types file
 // This type should match the structure returned by your /api/guest/check endpoint
@@ -43,6 +44,7 @@ import GuestRestrictionModal from "./guest-restriction-modal"
 import DataTest from "@/lib/test"
 import { promptIA } from "@/lib/prompt"
 import SelectSource from "./ui/select_source"
+import EmailTemplate from "./EmailTemp/email-template"
 
 const CV_DATA_STORAGE_KEY = "cv_builder_data"
 const CURRENT_STEP_STORAGE_KEY = "cv_builder_current_step"
@@ -53,12 +55,13 @@ const CURRENT_STEP_STORAGE_KEY = "cv_builder_current_step"
  * @returns A Promise that resolves to a Blob (PDF) or null if generation fails.
  * @throws Error if the API response is not OK, including custom properties for specific error handling.
  */
-async function generateDocument(data: CVData,api:string,prompt:string): Promise<Blob | null> {
+type documentOutput = { blob: Blob; filename: string ,cvId:number,pdfBase64:string} | null
+async function generateDocument(data: CVData,api:string,prompt:string,type:string,cvid:number|null): Promise<documentOutput> {
   try {
     const response = await fetch(api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(DataTest), prompt }),
+      body: JSON.stringify({ data: JSON.stringify(DataTest), prompt,type ,cvId:cvid }),
     })
 
     if (!response.ok) {
@@ -69,11 +72,29 @@ async function generateDocument(data: CVData,api:string,prompt:string): Promise<
       error.requiresAuth = response.status === 403
       throw error
     }
+    const responseData = await response.clone().json();
+   // Extract the Base64 PDF string, filename, and cvId
+    const pdfBase64 = responseData.pdfBase64;
+    const filename = responseData.filename || "document.pdf"; // Use provided filename or a default
+    const cvId = responseData.cvId || null;
 
-    return await response.blob()
+    // Convert Base64 string back to a Blob
+    const byteCharacters = atob(pdfBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+
+    // For demonstration, you can still use alert, but in a real app,
+    // you'd typically display the PDF or trigger a download.
+    //alert(`CV ID: ${cvId}, Filename: ${filename}`); // Example alert
+
+    return { blob: pdfBlob, filename: filename, cvId: cvId,pdfBase64: pdfBase64 };
   } catch (error) {
     console.error("Error generating CV:", error)
-    throw error 
+    throw error
   }
 }
 
@@ -121,9 +142,11 @@ const clearStorage = () => {
     console.error("Failed to clear localStorage:", error)
   }
 }
-interface CreateFilesResult {
+export interface CreateFilesResult {
   message: string[]
-  blobfile: Blob | null
+  blobfile: Blob | null | JSX.Element // Allow Blob or JSX.Element for EmailTemplate
+  filename: string // Assuming filename is a string
+  pdfBase64?: string // Optional Base64 string for PDF content
   index?: number // Optional index for tracking which file this is
 }
 export default function CvProcess() {
@@ -132,6 +155,8 @@ export default function CvProcess() {
   const [pdfBlob, setPdfBlob] = useState<CreateFilesResult[]>([])
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [isDataLoaded, setIsDataLoaded] = useState(false)
+  const [showContentDescription, setShowContentDescription] = useState(false)
+  const [cvId, setCvId] = useState<number | null>(null) // State to hold CV ID if needed
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [guestRestriction, setGuestRestriction] = useState<{
     isRestricted: boolean
@@ -309,20 +334,28 @@ export default function CvProcess() {
 
     setIsLoading(true)
     try {
-      const blob = await generateDocument(cvData,'/api/generate-pdf',promptIA.make_cv)
-      if (blob) {
-        setPdfBlob(
-          [{
-            message: [" CV Generated Successfully! ","Your professional CV is ready for download"],
-            blobfile: blob,
-            index: 0, // Set index to 0 for the first generated file
-          }] as CreateFilesResult[] 
-        )
-        setIndex(0) // Reset index to 0 after generation
-        setValidationErrors([])
-        clearStorage()
-      } else {
+      const doc = await generateDocument(cvData,'/api/generate-pdf',promptIA.make_cv,"cv",null)
+      if (!doc || !doc.blob) {
         setValidationErrors(["Failed to generate CV. Please try again."])
+        return
+      }
+      if (doc.blob) {
+        setPdfBlob((prev) => [
+          ...prev,
+          {
+            message: ["CV Ready", "Download your CV"],
+            blobfile: doc.blob,
+            pdfBase64: doc.pdfBase64, // Add the Base64 string to the blobfile
+            filename: doc.filename, // Assuming the filename is returned in the response headers
+            index: 0, 
+          },
+        ]);
+        setCvId(doc.cvId); // Set the CV ID if available
+        setIndex(pdfBlob.length); // Set index to the newly added blob
+        setValidationErrors([]);
+        // Do NOT clear storage here, only on "Create Another CV"
+      } else {
+        setValidationErrors(["Failed to generate CV. Please try again."]);
       }
     } catch (error: unknown) {
       // Use unknown for safer type checking
@@ -356,7 +389,7 @@ export default function CvProcess() {
     }
     console.log(pdfBlob.length)
     if (pdfBlob[i].blobfile) {
-      const url = URL.createObjectURL(pdfBlob[i].blobfile)
+      const url = URL.createObjectURL(pdfBlob[i].blobfile as Blob)
       const a = document.createElement("a")
       a.href = url
       a.download = `${cvData.personalInfo.name || "CV"}.${type_file_download}.pdf`
@@ -365,7 +398,7 @@ export default function CvProcess() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     }
-  } 
+  }
   const resetForm = useCallback(() => {
     clearStorage()
     setCvData({
@@ -388,11 +421,9 @@ export default function CvProcess() {
       jobPost: "",
     })
     setCurrentStep(0)
-    setPdfBlob(
-      pdfBlob.slice(1,  ) // Keep the first element if needed, or reset to empty array
-    )
+    setPdfBlob([]) // Clear all generated PDFs
     setValidationErrors([])
-  }, [pdfBlob]) // Empty dependency array as it doesn't depend on any state
+  }, []) // Empty dependency array as it doesn't depend on any state
 
   // Memoized onChange handlers for each step (already good)
   const handleCvTypeChange = useCallback(
@@ -551,8 +582,9 @@ export default function CvProcess() {
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Progress Bar */}
-        <div className="mb-6 sm:mb-8">
+        {/* Horizontal Progress Bar (Always visible at the top) */}
+        {pdfBlob.length  == 0 && (
+          <div className="mb-6 sm:mb-8">
           <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-900">CV Builder Progress</h3>
@@ -574,81 +606,171 @@ export default function CvProcess() {
             </div>
             <div className="flex justify-between mt-2 text-xs text-gray-600">
               <span>
-                Step {currentStep + 1} of {steps.length}
+                Step {currentStep + 1} of {steps.length}: {steps[currentStep]?.title}
               </span>
               <span>{Math.round(((currentStep + 1) / steps.length) * 100)}% Complete</span>
             </div>
           </div>
         </div>
+        )}
+        
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Left Sidebar - Step Indicator */}
-          <div className="w-full lg:w-80 lg:flex-shrink-0">
-            <Card className="lg:sticky lg:top-8">
-              <CardHeader>
-                <CardTitle className="text-lg">Steps</CardTitle>
-                <p className="text-sm text-gray-600">{steps[currentStep]?.title}</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {steps.map((step, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all cursor-pointer ${
-                      index === currentStep
-                        ? "bg-blue-50 border-2 border-blue-200"
-                        : index < currentStep
-                          ? "bg-green-50 border border-green-200"
-                          : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
-                    }`}
-                    onClick={() => {
-                      // Allow navigation to completed steps or current step
-                      if (index <= currentStep) {
-                        setCurrentStep(index)
-                      }
-                    }}
-                  >
-                    {index < currentStep ? (
-                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    ) : index === currentStep ? (
-                      <Circle className="w-5 h-5 text-blue-600 fill-current flex-shrink-0" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm font-medium truncate ${
-                          index === currentStep
-                            ? "text-blue-900"
-                            : index < currentStep
-                              ? "text-green-900"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {step.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {step.required && (
-                          <Badge variant="secondary" className="text-xs">
-                            Required
-                          </Badge>
-                        )}
-                        {index < currentStep && (
-                          <Badge variant="outline" className="text-xs text-green-600 border-green-200">
-                            Complete
-                          </Badge>
-                        )}
+        {pdfBlob.length === 0 ? (
+          // Layout for Data Filling (Vertical Progress Bar + Form)
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-190px)]"> {/* Adjusted min-h for vertical layout */}
+            {/* Left Vertical Progress Bar */}
+            <div className="w-full lg:w-64 lg:flex-shrink-0"> {/* Adjusted width for vertical bar */}
+              <Card className="lg:sticky lg:top-8 lg:max-h-[calc(100vh-64px)] lg:overflow-y-auto">
+                <CardHeader>
+                  <CardTitle className="text-lg">Steps</CardTitle>
+                    <p className="text-sm text-gray-600">Complete the steps to create your CV</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {steps.map((step, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center w-54 space-x-3 p-3 rounded-lg transition-all cursor-pointer ${
+                        index === currentStep
+                          ? "bg-blue-50 border-2 border-blue-200"
+                          : index < currentStep
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
+                      }`}
+                      onClick={() => {
+                        if (index <= currentStep) {
+                          setCurrentStep(index)
+                        }
+                      }}
+                    >
+                      {index < currentStep ? (
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      ) : index === currentStep ? (
+                        <Circle className="w-5 h-5 text-blue-600 fill-current flex-shrink-0" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-sm font-medium truncate ${
+                            index === currentStep
+                              ? "text-blue-900"
+                              : index < currentStep
+                                ? "text-green-900"
+                                : "text-gray-600"
+                          }`}
+                        >
+                          {step.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {step.required && (
+                            <Badge variant="secondary" className="text-xs">
+                              Required
+                            </Badge>
+                          )}
+                          {index < currentStep && (
+                            <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                              Complete
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1">
-            <Card>
-              <CardContent className="p-4 sm:p-6 lg:p-8">
+            {/* Main Content Area for Form Steps */}
+            <div className="flex-1">
+              <Card>
+                <CardContent className="p-4 sm:p-6 lg:p-8">
+                  {/* Validation Errors */}
+                  {validationErrors.length > 0 && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <h4 className="text-red-800 font-medium mb-2">Please fix the following errors:</h4>
+                      <ul className="text-red-700 text-sm space-y-1">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {currentStep < formSteps.length ? (
+                    formSteps[currentStep]
+                  ) : currentStep === steps.length - 1 ? (
+                    // Generate CV Step when no PDF is generated yet
+                    <div className="text-center space-y-6">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Ready to Generate Your CV</h2>
+                        <p className="text-gray-600">
+                          Review your information and generate your CV, or create a cover letter, email template.
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-4 sm:p-6 rounded-lg text-left max-w-2xl mx-auto">
+                        <h3 className="font-semibold text-gray-900 mb-4">CV Summary:</h3>
+                        <div className="space-y-2 text-sm text-gray-600">
+                          <p>
+                            <strong>Type:</strong> {cvData.cvType || "Not specified"}
+                          </p>
+                          <p>
+                            <strong>Name:</strong> {cvData.personalInfo.name || "Not specified"}
+                          </p>
+                          <p>
+                            <strong>Email:</strong> {cvData.personalInfo.email || "Not specified"}
+                          </p>
+                          <p>
+                            <strong>Education entries:</strong> {cvData.education.length}
+                          </p>
+                          <p>
+                            <strong>Experience entries:</strong> {cvData.experience.length}
+                          </p>
+                          <p>
+                            <strong>Skills:</strong> {cvData.skills.length}
+                          </p>
+                          <p>
+                            <strong>Projects:</strong> {cvData.projects.length}
+                          </p>
+                          <p>
+                            <strong>Certifications:</strong> {cvData.certifications.length}
+                          </p>
+                          <p>
+                            <strong>Languages:</strong> {cvData.languages.length}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <Button variant="outline" onClick={prevStep} className="w-full sm:w-auto bg-transparent">
+                          Back to Edit
+                        </Button>
+                        <Button
+                          onClick={handleGenerateCV}
+                          disabled={isLoading}
+                          className="min-w-[140px] w-full sm:w-auto"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            "Generate CV"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          // Layout for Generated  (PDF Preview + Right Sidebar)
+          <div className= "  flex flex-col lg:flex-row gap-6 lg:gap-8">
+            {/* Main Content Area for PDF Preview */}
+            <div className="flex-1">
+                
+              <Card>
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                 {/* Validation Errors */}
                 {validationErrors.length > 0 && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -661,178 +783,197 @@ export default function CvProcess() {
                   </div>
                 )}
 
-                {/* Current Step Content */}
-                {currentStep < formSteps.length ? (
-                  formSteps[currentStep]
-                ) : currentStep === steps.length - 1 ? (
-                  // Generate CV Step
-                  <div className="text-center space-y-6">
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                        {pdfBlob.length > 0 && pdfBlob[index].message.length >0 && pdfBlob[index].message[0]  ? pdfBlob[index].message[0] : "Ready to Generate Your CV"}
-                      </h2>
-                      <p className="text-gray-600">
-                        {pdfBlob.length > 0 && pdfBlob[index].message.length >0 && pdfBlob[index].message[1]
-                          ? pdfBlob[index].message[1] || "Your CV is ready for download."
-                          : "Review your information and generate your  CV, or create a cover letter , email template."}
-                      </p>
-                    </div>
+                {/* Floating Navigation and Info Buttons */}
+                <div className="z-50 fixed left-4 top-1/2 -translate-y-1/2 flex flex-col space-y-4">
+                  <button
+                    className="p-2 rounded-full bg-blue-200 shadow-md hover:bg-blue-300 transition-all"
+                    onClick={() => setIndex((prev) => Math.max(prev - 1, 0))}
+                  >
+                    <div className="text-blue-600 text-xl">{'<'}</div>
+                  </button>
+                  <button
+                    className="p-2 rounded-full bg-green-200 shadow-md hover:bg-green-300 transition-all"
+                    onClick={() => setIndex((prev) => Math.min(prev + 1, pdfBlob.length - 1))}
+                  >
+                    <div className="text-green-600 text-xl">{'>'}</div>
+                  </button>
+                  {/* Optional Info Icon, if needed */}
+                  {!showContentDescription && (
+                    <button
+                      className="p-2 mt-4 rounded-full bg-gray-200 shadow-md hover:bg-gray-300 transition-all"
+                      onClick={() => setShowContentDescription(!showContentDescription)}
+                    >
+                      <InformationCircleIcon className="w-5 h-5 text-gray-600" />
+                    </button>
+                  )}
+                </div>
 
-                    {pdfBlob.length == 0 && (
-                      <>
-                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg text-left max-w-2xl mx-auto">
-                          <h3 className="font-semibold text-gray-900 mb-4">CV Summary:</h3>
-                          <div className="space-y-2 text-sm text-gray-600">
-                            <p>
-                              <strong>Type:</strong> {cvData.cvType || "Not specified"}
-                            </p>
-                            <p>
-                              <strong>Name:</strong> {cvData.personalInfo.name || "Not specified"}
-                            </p>
-                            <p>
-                              <strong>Email:</strong> {cvData.personalInfo.email || "Not specified"}
-                            </p>
-                            <p>
-                              <strong>Education entries:</strong> {cvData.education.length}
-                            </p>
-                            <p>
-                              <strong>Experience entries:</strong> {cvData.experience.length}
-                            </p>
-                            <p>
-                              <strong>Skills:</strong> {cvData.skills.length}
-                            </p>
-                            <p>
-                              <strong>Projects:</strong> {cvData.projects.length}
-                            </p>
-                            <p>
-                              <strong>Certifications:</strong> {cvData.certifications.length}
-                            </p>
-                            <p>
-                              <strong>Languages:</strong> {cvData.languages.length}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                          <Button variant="outline" onClick={prevStep} className="w-full sm:w-auto bg-transparent">
-                            Back to Edit
-                          </Button>
-                          <Button
-                            onClick={handleGenerateCV}
-                            disabled={isLoading}
-                            className="min-w-[140px] w-full sm:w-auto"
-                          >
-                            {isLoading ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Generating...
-                              </>
-                            ) : (
-                              "Generate CV"
-                            )}
-                          </Button>
-                        </div>
-                      </>
-                    )}
-
-                    {pdfBlob.length > 0 && (
-                    <div className="space-y-6"> {/* Increased space-y for better separation */}
-                      <div className="bg-gray-50 p-4 sm:p-6 rounded-lg shadow-md"> {/* Added shadow for depth */}
-                        {pdfBlob.length > 0 && pdfBlob[index].blobfile && (
-                          <iframe
-                            src={URL.createObjectURL(pdfBlob[index].blobfile)}
-                            className="w-full h-64 sm:h-96 border border-gray-300 rounded-md shadow-inner" // Added border and shadow-inner for better embed look
-                            title="Generated Document Preview" // More general title
-                          />
-                        )}
-                      </div>
-
-                      {/* Section for Document Actions (Download, Get Cover Letter, Get Email) */}
-                      <div className="p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-100"> {/* New container for document actions */}
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Document Actions</h3>
-                        <div className="flex flex-col sm:flex-row justify-center items-center gap-4"> {/* Centered and stacked on small screens */}
-                          {/* Download Document Section */}
-                          <div className="flex-1 min-w-[200px] max-w-md"> {/* Allows select to take reasonable width */}
-                            <label htmlFor="download-select" className="sr-only">Select Source to Download</label>
-                            <SelectSource downloadPDF={downloadPDF} />
-                          </div>
-
-                          {/* Action Buttons for additional documents/templates */}
-                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1 justify-center">
-                            <Button
-                              variant="outline"
-                              onClick={async () => {
-                                const blob = await generateDocument(cvData, '/api/generate-pdf', promptIA.generate_cover_letter);
-                                if (blob) {
-                                  let found = false;
-                                  for (let i = 0; i < pdfBlob.length; i++) {
-                                    if (!pdfBlob[i].blobfile) {
-                                      setIndex(i);
-                                      found = true;
-                                      break;
-                                    }
-                                  }
-                                  if (!found) {
-                                    setIndex(pdfBlob.length);
-                                  }
-                                  setPdfBlob(
-                                    [
-                                      ...pdfBlob,
-                                      {
-                                        message: ["Cover Letter generated successfully", "Your cover letter is ready for download."],
-                                        blobfile: blob,
-                                        index: pdfBlob.length, // Add at the end of the list
-                                      },
-                                    ] as CreateFilesResult[]
-                                  );
-                                  setValidationErrors([]);
-                                } else {
-                                  setValidationErrors(["Failed to generate Cover Letter. Please try again."]);
-                                }
-                              }}
-                              className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700" // Highlighted as a primary "get" action
-                            >
-                              Get Cover Letter
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              onClick={() => console.log('Generate Email Template')}
-                              className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700" // Highlighted as another "get" action
-                            >
-                              Get Email Template
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section for Generation Controls */}
-                      <div className="flex flex-wrap justify-center gap-3 sm:gap-4 p-4 sm:p-6 bg-white rounded-lg shadow-md border border-gray-100"> {/* New container for generation actions */}
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4 w-full text-center">Generation Controls</h3>
-                        <Button
-                          variant="outline"
-                          onClick={resetForm}
-                          className="w-full sm:w-auto border-blue-500 text-blue-700 hover:bg-blue-50" // Clear action, distinct styling
-                        >
-                          Create Another CV
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          onClick={() => setPdfBlob(pdfBlob.slice(1))}
-                          className="w-full sm:w-auto border-purple-500 text-purple-700 hover:bg-purple-50" // "Generate Again" implies modifying current document list
-                        >
-                          Generate Again
-                        </Button>
+                {/* PDF Content Area */}
+                <div className="space-y-6">
+                  {/* Conditional Description Content or Info Icon */}
+                  {showContentDescription ? (
+                    DescriptionContent(pdfBlob, index, setShowContentDescription)
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      <div 
+                        onClick={() => setShowContentDescription(!showContentDescription)}
+                        className="flex z-50 items-center space-x-2 text-gray-600 cursor-pointer"
+                      >
+                        
                       </div>
                     </div>
                   )}
+                  
+                  <div className="relative bottom-7 space-y-4">
+                    <div className="bg-gray-50 p-3   sm:p-4 rounded-lg ">
+                      {pdfBlob.length > 0 && pdfBlob[index].blobfile && pdfBlob[index].index !== undefined &&  pdfBlob[index].index<2 ? (
+                        <iframe
+                          src={pdfBlob[index].blobfile instanceof Blob ? URL.createObjectURL(pdfBlob[index].blobfile) : ""}
+                          className="w-full h-[calc(100vh-250px)] md:h-[calc(100vh-200px)] border border-gray-300 rounded-md shadow-inner"
+                          title="Generated Document Preview"
+                          onLoad={() => {
+                            if (pdfBlob[index].blobfile instanceof Blob) {
+                            URL.revokeObjectURL(URL.createObjectURL(pdfBlob[index].blobfile));
+                            //seturls((prev) => [...prev, URL.createObjectURL(pdfBlob[index].blobfile as Blob)]);  
+                          }
+                          }}
+                        />
+                      ) : pdfBlob[index]?.blobfile ? (
+                        <div >
+                        {pdfBlob[index].blobfile as JSX.Element}
+                        </div>
+                        
+                      ) : null}
+                    </div>
                   </div>
-                ) : null}
+                </div>
               </CardContent>
-            </Card>
+              </Card>
+            </div>
+
+            {/* Right Sidebar - Document Actions and Generation Controls */}
+            <div className="w-full lg:w-80 lg:flex-shrink-0">
+              <div className="lg:sticky lg:top-8 lg:max-h-[calc(100vh-64px)] lg:overflow-y-auto space-y-6">
+                {/* Document Actions Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg text-center">Document Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-full">
+                        <label htmlFor="download-select" className="sr-only">Select Source to Download</label>
+                        <SelectSource downloadPDF={downloadPDF} />
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          const blob = await generateDocument(cvData, '/api/generate-pdf', promptIA.generate_cover_letter, "cover",cvId);
+                          if (blob) {
+                            let found = false;
+                            for (let i = 0; i < pdfBlob.length; i++) {
+                              if (!pdfBlob[i].blobfile) {
+                                setIndex(i);
+                                found = true;
+                                break;
+                              }
+                            }
+                            if (!found) {
+                              setIndex(pdfBlob.length);
+                            }
+                            setPdfBlob(
+                              [
+                                ...pdfBlob,
+                                {
+                                  message: ["Cover Letter generated successfully", "Your cover letter is ready for download."],
+                                  blobfile: blob.blob,
+                                  filename:blob.filename || "cover_letter.pdf",
+                                  pdfBase64: blob.pdfBase64, // Add the Base64 string to the blobfile
+                                  index: 1,
+                                },
+                              ] as CreateFilesResult[]
+                            );
+                            setValidationErrors([]);
+                          } else {
+                            setValidationErrors(["Failed to generate Cover Letter. Please try again."]);
+                          }
+                        }}
+                        className="w-full bg-blue-600 text-white hover:bg-blue-700 text-sm py-2 px-3"
+                      >
+                      Get Cover Letter
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          fetch('/api/email_job', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data: JSON.stringify(DataTest), prompt: promptIA.prompt_generate_job_application_email }),
+                          })
+                            .then(response => response.json())
+                            .then((data:outputAiEmail) => {
+                              if (data) {
+                                let found = false;
+                                for (let i = 0; i < pdfBlob.length; i++) {
+                                  if (pdfBlob[i].index  ==3) {
+                                    setIndex(i);
+                                    found = true;
+                                    break;
+                                  }
+                                }
+                                if (!found) {
+                                  setIndex(pdfBlob.length);
+                                  FillEmail(pdfBlob, data, setPdfBlob)
+                                }else{
+                                  const filterblobs = pdfBlob.filter((item) => item.index !== 3);
+                                  FillEmail(filterblobs, data, setPdfBlob)
+                                }
+                                
+                                setValidationErrors([]);
+                              } else {
+                                setValidationErrors(["Failed to generate Email Template. Please try again."]);
+                              }
+                            })
+                            .catch(error => {
+                              console.error("Error generating email template:", error);
+                              setValidationErrors(["An error occurred while generating the Email Template."]);
+                            });
+                          
+                        }}
+                        className="w-full bg-emerald-600 text-white hover:bg-emerald-700 text-sm py-2 px-3"
+                      >
+                        Get Email Template
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Generation Controls Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg text-center">Generation Controls</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button
+                      variant="outline"
+                      onClick={resetForm}
+                      className="w-full border-blue-500 text-blue-700 hover:bg-blue-50 text-sm py-2 px-3"
+                    >
+                      Create Another CV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleGenerateCV}
+                      className="w-full border-purple-500 text-purple-700 hover:bg-purple-50 text-sm py-2 px-3"
+                    >
+                      Generate Again
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       {/* Guest Restriction Modal */}
       <GuestRestrictionModal
@@ -843,3 +984,75 @@ export default function CvProcess() {
     </div>
   )
 }
+function DescriptionContent(pdfBlob: CreateFilesResult[], index: number,setShowContentDescription: React.Dispatch<React.SetStateAction<boolean>>) {
+  return (
+    // Backdrop for the pop-up
+    <div className= " w-sm fixed   top-150 left-280 inset-0 z-[100] flex items-center justify-center  opacity-70">
+      <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg mx-4 space-y-6 transform transition-all scale-100 ease-out duration-300">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {pdfBlob.length > 0 && pdfBlob[index]?.message.length > 0 && pdfBlob[index].message[0]
+              ? pdfBlob[index].message[0]
+              : "Ready to Generate Your CV"}
+          </h2>
+          <p className="text-gray-600 text-sm mt-2">
+            {pdfBlob.length > 0 && pdfBlob[index]?.message.length > 1
+              ? pdfBlob[index].message[1] || "Your CV is ready for download."
+              : "Review your information and generate your CV, or create a cover letter or email template."}
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowContentDescription(false)}
+            className="px-6 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Hide Description
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function FillEmail(pdfBlob: CreateFilesResult[], data: outputAiEmail, setPdfBlob: { (value: SetStateAction<CreateFilesResult[]>): void; (arg0: CreateFilesResult[]): void }) {
+  let cvfile = undefined
+  let coverfile = undefined
+  const  urls: string[] = [
+    pdfBlob[0]?.filename || "cv.pdf",
+    pdfBlob[1]?.filename || "cover_letter.pdf",
+  ]
+  const base64urls = [
+    pdfBlob[0]?.pdfBase64 || "",
+    pdfBlob[1]?.pdfBase64 || "",
+  ]
+  for (let i = 0; i < pdfBlob.length; i++) {
+    if (pdfBlob[i].index === 0) {
+      cvfile = pdfBlob[i].blobfile
+
+    }
+    if (pdfBlob[i].index === 1) {
+      coverfile = pdfBlob[i].blobfile
+    }
+  }
+  //const urls=[URL.createObjectURL(cvfile as Blob), URL.createObjectURL(coverfile as Blob)]
+  const email_template: EmailProps = {
+    emailBody: data.emailBody,
+    emailSubject: data.emailSubject,
+    destinationEmail: data.destinationEmail,
+    senderEmail: data.senderEmail,
+    cvFile: cvfile as Blob,
+    coverLetter: coverfile as Blob
+  }
+
+
+  setPdfBlob([
+    ...pdfBlob,
+    {
+      message: ["Email Ready", "Template prepared."],
+      blobfile: <EmailTemplate initialData={email_template} pdfBlobs={base64urls}/>,
+      index: 3,
+    },
+  ] as CreateFilesResult[])
+}
+

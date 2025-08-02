@@ -1,6 +1,7 @@
-import genAI from "@/lib/ai";
+import generateResponse from "@/lib/ai";
 import { promptIA } from "@/lib/prompt";
-import { GeneratedEmailOutput } from "@/lib/type";
+import DataTest from "@/lib/test";
+import { EmailProps } from "@/lib/type";
 import { NextRequest, NextResponse } from "next/server";
 
 
@@ -10,15 +11,15 @@ const promptIntro: string = promptIA.prompt_generate_job_application_email;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const input = await req.json();
-    const model = genAI;
-
+    //const input = await req.json();
+    
     let aiRawResponse: string;
     try {
-      const result = await model.generateContent(
-        `${promptIntro}\n\n${input.data}`
-      );
-      aiRawResponse = result.response.text();
+      
+      aiRawResponse = await generateResponse(
+        promptIntro,
+        JSON.stringify(DataTest, null, 2) // Convert input to a formatted JSON string
+      )
       // Remove markdown code block fences (```json) if the AI includes them
       aiRawResponse = aiRawResponse.replace(/```json|```/gi, "").trim();
     } catch (aiError: unknown) {
@@ -40,11 +41,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let parsedEmail: GeneratedEmailOutput;
+    let parsedEmail: EmailProps;
     try {
       parsedEmail = JSON.parse(aiRawResponse);
+      console.log("Parsed email object:", parsedEmail);
       // Basic validation to ensure the parsed object has the expected keys
-      if (!parsedEmail.subject || !parsedEmail.body || !parsedEmail.to) {
+      if (!parsedEmail.emailSubject || !parsedEmail.emailBody || !parsedEmail.destinationEmail || !parsedEmail.senderEmail) {
         throw new Error("Missing expected fields in AI's JSON output.");
       }
     } catch (parseError: unknown) {

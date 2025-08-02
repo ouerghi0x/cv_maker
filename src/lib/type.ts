@@ -65,9 +65,21 @@ export type {
    
   CVData 
 };
-interface GeneratedEmailOutput {
-  subject: string;
-  body: string;
-  to: string;
+type outputAiEmail = {
+    destinationEmail: string;
+    senderEmail: string;
+    emailSubject: string;
+    emailBody: string;
+    coverLetter: Blob;
 }
-export type { GeneratedEmailOutput };
+type EmailProps = {
+    destinationEmail: string;
+    senderEmail: string;
+    emailSubject: string;
+    emailBody: string;
+    coverLetter: Blob;
+    cvFile: Blob;
+    
+};
+
+export type { EmailProps,outputAiEmail };

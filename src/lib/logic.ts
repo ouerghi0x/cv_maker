@@ -1,29 +1,50 @@
 import path from "path";
 import prisma from "./prisma";
 import { CVData } from "./type";
-
-async function saveDataUser(userId: number, cvData: CVData) {
-  //console.log(cvData)
+async function saveDataUser(userId: number, cvData: CVData, pdftype: "cv" | "cover" = "cv",pdfpath:string = "",cvId: number | null = null) {
   try {
-    const cv = await prisma.cV.create({
-      data: {
-        userId,
-        cvType: cvData.cvType || "",
-        jobPost: cvData.jobPost || "",
-        personalInfo: cvData.personalInfo,
-        education: cvData.education,
-        experience: cvData.experience,
-        skills: cvData.skills,
-        projects: cvData.projects,
-        certifications: cvData.certifications,
-        languages: cvData.languages,
-      },
-    });
+
+    const commonData = {
+      userId,
+      cvType: cvData.cvType || "",
+      jobPost: cvData.jobPost || "",
+      personalInfo: cvData.personalInfo,
+      education: cvData.education,
+      experience: cvData.experience,
+      skills: cvData.skills,
+      projects: cvData.projects,
+      certifications: cvData.certifications,
+      languages: cvData.languages,
+    };
+    // Check if cvId exists in cvData
+    let cv = null;
+    if (cvId) {
+      const updateData: Partial<typeof commonData & { pdfcvUrl?: string; pdfcoverUrl?: string }> = { ...commonData };
+
+      
+
+      cv = await prisma.cV.update({
+        where: { id: cvId },
+        data: updateData,
+      });
+      console.log(`CV with ID ${cvId} updated successfully.`);
+    } else {
+      const createData = {
+        ...commonData,
+        pdfcvUrl: pdftype === "cv" ? pdfpath : null,
+        pdfcoverUrl: pdftype === "cover" ? pdfpath : null,
+      };
+
+      cv = await prisma.cV.create({
+        data: createData,
+      });
+      console.log("New CV created successfully.");
+    }
 
     return cv;
   } catch (error) {
-    console.error("Error saving CV:", error);
-    throw new Error("Failed to save CV.");
+    console.error("Error saving/updating CV:", error);
+    throw new Error("Failed to save or update CV.");
   }
 }
 function Createfiles(filename: string = "main") {

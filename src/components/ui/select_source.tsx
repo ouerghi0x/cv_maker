@@ -1,8 +1,11 @@
+import { useState } from "react";
+
 type Props = {
   downloadPDF: (i: number, type_file_download: string) => void;
 };
 
 export default function SelectSource({ downloadPDF }: Props) {
+  const [index, setIndex] = useState(-1);
   return (
     <div className="w-full max-w-xs mx-auto">
       <label
@@ -14,12 +17,13 @@ export default function SelectSource({ downloadPDF }: Props) {
       <select
         id="file-download-select"
         className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-gray-800 bg-white"
-        defaultValue="-1"
+        defaultValue={index}
         onChange={(e) => {
           const selectedValue = parseInt(e.target.value);
           if (selectedValue !== -1) {
             const type_file_download = selectedValue === 0 ? 'CV' : 'cover_letter';
             downloadPDF(selectedValue, type_file_download);
+            setIndex(-1);
           }
         }}
       >
