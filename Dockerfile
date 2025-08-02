@@ -44,7 +44,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 
 # Optional: copy env if required in container
-COPY --from=builder /app/.env ./.env
 
 EXPOSE 3000
 
