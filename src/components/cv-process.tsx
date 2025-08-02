@@ -41,7 +41,6 @@ interface CustomCVGenerationError extends Error {
 // Assuming GuestRestrictionModalProps is defined in guest-restriction-modal.tsx
 // and imports GuestInfo. If not, you might need to adjust the import path or define it here.
 import GuestRestrictionModal from "./guest-restriction-modal"
-import DataTest from "@/lib/test"
 import { promptIA } from "@/lib/prompt"
 import SelectSource from "./ui/select_source"
 import EmailTemplate from "./EmailTemp/email-template"
@@ -61,7 +60,7 @@ async function generateDocument(data: CVData,api:string,prompt:string,type:strin
     const response = await fetch(api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(DataTest), prompt,type ,cvId:cvid }),
+      body: JSON.stringify({ data: JSON.stringify(data), prompt,type ,cvId:cvid }),
     })
 
     if (!response.ok) {
@@ -908,7 +907,7 @@ export default function CvProcess() {
                           fetch('/api/email_job', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ data: JSON.stringify(DataTest), prompt: promptIA.prompt_generate_job_application_email }),
+                            body: JSON.stringify({ data: JSON.stringify(cvData), prompt: promptIA.prompt_generate_job_application_email }),
                           })
                             .then(response => response.json())
                             .then((data:outputAiEmail) => {
@@ -1018,10 +1017,7 @@ function DescriptionContent(pdfBlob: CreateFilesResult[], index: number,setShowC
 function FillEmail(pdfBlob: CreateFilesResult[], data: outputAiEmail, setPdfBlob: { (value: SetStateAction<CreateFilesResult[]>): void; (arg0: CreateFilesResult[]): void }) {
   let cvfile = undefined
   let coverfile = undefined
-  const  urls: string[] = [
-    pdfBlob[0]?.filename || "cv.pdf",
-    pdfBlob[1]?.filename || "cover_letter.pdf",
-  ]
+  
   const base64urls = [
     pdfBlob[0]?.pdfBase64 || "",
     pdfBlob[1]?.pdfBase64 || "",

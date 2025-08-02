@@ -1,6 +1,5 @@
 import generateResponse from "@/lib/ai";
 import { promptIA } from "@/lib/prompt";
-import DataTest from "@/lib/test";
 import { EmailProps } from "@/lib/type";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,16 +10,15 @@ const promptIntro: string = promptIA.prompt_generate_job_application_email;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    //const input = await req.json();
+    const input = await req.json();
     
     let aiRawResponse: string;
     try {
       
       aiRawResponse = await generateResponse(
         promptIntro,
-        JSON.stringify(DataTest, null, 2) // Convert input to a formatted JSON string
+        JSON.stringify(input, null, 2) 
       )
-      // Remove markdown code block fences (```json) if the AI includes them
       aiRawResponse = aiRawResponse.replace(/```json|```/gi, "").trim();
     } catch (aiError: unknown) {
       console.error("AI email generation error:", aiError);
