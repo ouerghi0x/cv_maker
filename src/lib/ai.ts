@@ -5,11 +5,8 @@ const keys = [
   process.env.GEMINI_API_KEY,
   process.env.GEMINI_API_KEY2,
   process.env.GEMINI_API_KEY1,
-].filter(Boolean); // Filters out undefined keys
+]
 
-if (keys.length === 0) {
-  throw new Error("No valid GEMINI_API_KEYs are set in environment variables.");
-}
 
 async function generateResponse(
   prompt: string,
