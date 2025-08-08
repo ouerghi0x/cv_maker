@@ -16,8 +16,25 @@ model User {
   password  String
   createdAt DateTime @default(now())
   cvs       CV[]    // One-to-many relationship
+  subscriptions Subscription[] // One-to-many relationship
+  freeTrialUsed Int @default(3) // Indicates if the user has used the free trial
+  hasSubscription Boolean @default(false) // Indicates if the user has an active subscription
 }
+model Subscription {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  plan        String   // e.g., "free", "premium"
+  status      String   // e.g., "active", "cancelled"
+  startDate   DateTime @default(now())
+  endDate     DateTime? // Optional end date for the subscription
+  lastPayment DateTime? // Optional last payment date
+  trialEndDate DateTime? // Optional trial end date
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  @@index([userId, status])
+}
 model CV {
   id          Int      @id @default(autoincrement())
   user        User     @relation(fields: [userId], references: [id])

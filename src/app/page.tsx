@@ -23,13 +23,14 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import CVGallery from "@/components/ui/cvgallery"
+import MyD17Info from "@/components/payment/d17info"
 
 export default function LandingPage() {
   const [user, setUser] = useState<{ email: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
-
+  const [showD17Info, setShowD17Info] = useState(false)
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -52,6 +53,7 @@ export default function LandingPage() {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
       setUser(null)
+      localStorage.clear()
       router.refresh()
     } catch (error) {
       console.error("Logout failed", error)
@@ -541,8 +543,13 @@ export default function LandingPage() {
                   </li>
                 </ul>
                 <div className="pt-4 sm:pt-6">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">Upgrade to Pro</Button>
+                  <Button    
+                  onClick={() => setShowD17Info(true)}
+                  
+                  
+                  className="w-full bg-blue-600 hover:bg-blue-700">Upgrade to Pro</Button>
                 </div>
+                
               </CardContent>
             </Card>
 
@@ -583,8 +590,12 @@ export default function LandingPage() {
                   </li>
                 </ul>
                 <div className="pt-4 sm:pt-6">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">Go Premium</Button>
+                  <Button 
+                  onClick={() => setShowD17Info(true)}
+                  
+                  className="w-full bg-purple-600 hover:bg-purple-700">Go Premium</Button>
                 </div>
+               
               </CardContent>
             </Card>
           </div>
@@ -626,7 +637,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+       
       {/* CTA Section */}
       <section className="py-12 sm:py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="container mx-auto px-4 text-center">
@@ -692,7 +703,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+     {showD17Info && <MyD17Info setD17Info={setShowD17Info} />}
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 sm:py-12">
         <div className="container mx-auto px-4">

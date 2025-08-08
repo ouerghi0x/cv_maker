@@ -4,13 +4,15 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Mail, Lock, Eye, EyeOff, UserPlus, Check } from "lucide-react"
-import Link from "next/link"
 import { Alert, AlertDescription } from "../ui/alert"
+
+import { Loader2, Mail, Lock, Eye, EyeOff, UserPlus, Check } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -25,9 +27,9 @@ export default function RegisterPage() {
   // Password strength validation
   const passwordRequirements = [
     { label: "At least 8 characters", test: (pwd: string) => pwd.length >= 8 },
-    { label: "Contains uppercase letter", test: (pwd: string) => /[A-Z]/.test(pwd) },
-    { label: "Contains lowercase letter", test: (pwd: string) => /[a-z]/.test(pwd) },
-    { label: "Contains number", test: (pwd: string) => /\d/.test(pwd) },
+    { label: "Contains an uppercase letter", test: (pwd: string) => /[A-Z]/.test(pwd) },
+    { label: "Contains a lowercase letter", test: (pwd: string) => /[a-z]/.test(pwd) },
+    { label: "Contains a number", test: (pwd: string) => /\d/.test(pwd) },
   ]
 
   const isPasswordValid = passwordRequirements.every((req) => req.test(password))
@@ -38,12 +40,12 @@ export default function RegisterPage() {
     setError("")
 
     if (!isPasswordValid) {
-      setError("Password does not meet requirements")
+      setError("Please ensure your password meets all the requirements.")
       return
     }
 
     if (!doPasswordsMatch) {
-      setError("Passwords do not match")
+      setError("Passwords do not match. Please check and try again.")
       return
     }
 
@@ -63,7 +65,6 @@ export default function RegisterPage() {
         setError(data.error || "Registration failed. Please try again.")
       }
     } catch (err: unknown) {
-      // Log the error for debugging purposes
       console.error("Network error during registration:", err)
       setError("Network error. Please try again.")
     } finally {
@@ -73,51 +74,53 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4 py-8">
-      <div className="w-full max-w-md">
-        <Card className="shadow-xl border-0">
+      <div className="w-full max-w-sm sm:max-w-md">
+        <Card className="shadow-2xl border-gray-100/50">
           <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-4">
+            <div className="mx-auto w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-2 animate-fade-in-down">
               <UserPlus className="w-6 h-6 text-white" />
             </div>
-            <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">Create account</CardTitle>
-            <CardDescription className="text-gray-600 text-sm sm:text-base">
-              Join us to start building your professional CV
+            <CardTitle className="text-xl sm:text-2xl font-extrabold text-gray-900">
+              Create Your Job-Ready Account
+            </CardTitle>
+            <CardDescription className="text-gray-600 text-sm sm:text-base px-2">
+              Start your journey to a new career with our smart CV and application tools.
             </CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               {error && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-800 text-sm">{error}</AlertDescription>
+                <Alert variant="destructive" className="border-red-200 bg-red-50 animate-slide-in">
+                  <AlertDescription className="text-red-800 text-sm font-medium">{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
                   Email address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={isLoading}
-                    className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    className="pl-10 h-11 border-gray-300 focus:border-green-500 focus:ring-green-500 transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -126,25 +129,31 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isLoading}
-                    className="pl-10 pr-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    className="pl-10 pr-10 h-11 border-gray-300 focus:border-green-500 focus:ring-green-500 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     disabled={isLoading}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
 
-                {/* Password Requirements */}
                 {password && (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 space-y-1 text-xs px-1">
                     {passwordRequirements.map((req, index) => (
-                      <div key={index} className="flex items-center text-xs">
-                        <Check className={`w-3 h-3 mr-2 ${req.test(password) ? "text-green-600" : "text-gray-400"}`} />
-                        <span className={req.test(password) ? "text-green-600" : "text-gray-500"}>{req.label}</span>
+                      <div key={index} className="flex items-center">
+                        <Check
+                          className={`w-3 h-3 mr-2 transition-colors duration-200 ${
+                            req.test(password) ? "text-green-600" : "text-gray-400"
+                          }`}
+                        />
+                        <span className={`transition-colors duration-200 ${req.test(password) ? "text-green-600" : "text-gray-500"}`}>
+                          {req.label}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -152,11 +161,11 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700">
                   Confirm password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
@@ -165,23 +174,23 @@ export default function RegisterPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     disabled={isLoading}
-                    className={`pl-10 pr-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500 ${
-                      confirmPassword && !doPasswordsMatch
-                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                        : ""
+                    className={`pl-10 pr-10 h-11 border-gray-300 focus:border-green-500 focus:ring-green-500 transition-all ${
+                      confirmPassword && !doPasswordsMatch ? "border-red-400" : ""
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     disabled={isLoading}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-
-                {confirmPassword && !doPasswordsMatch && <p className="text-xs text-red-600">Passwords do not match</p>}
+                {confirmPassword && !doPasswordsMatch && (
+                  <p className="text-xs text-red-600 px-1">Passwords do not match</p>
+                )}
               </div>
             </CardContent>
 
@@ -189,7 +198,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 disabled={isLoading || !email || !isPasswordValid || !doPasswordsMatch}
-                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors"
+                className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
               >
                 {isLoading ? (
                   <>
@@ -205,7 +214,7 @@ export default function RegisterPage() {
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="text-green-600 hover:text-green-700 font-medium hover:underline transition-colors"
+                  className="text-green-600 hover:text-green-700 font-semibold hover:underline transition-colors"
                 >
                   Sign in
                 </Link>

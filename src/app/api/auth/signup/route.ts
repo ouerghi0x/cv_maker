@@ -18,9 +18,18 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await prisma.user.create({
+    const user=await prisma.user.create({
     data: { email, password: hashedPassword },
   });
+    await prisma.subscription.create({
+      data: {
+        userId: user.id,
+        plan: 'free',
+        status: 'active',
+        startDate: new Date(),
+        trialEndDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // 1 month trial
+      },
+    });
 
     return NextResponse.json({ message: 'User created' }, { status: 201 });
   } catch (err) {

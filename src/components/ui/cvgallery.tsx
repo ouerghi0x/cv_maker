@@ -11,6 +11,13 @@ export default function CVGallery() {
     { src: "/page3.png", alt: "CV Template 3" },
     { src: "/page4.png", alt: "CV Template 4" },
     { src: "/page5.png", alt: "CV Template 5" },
+    { src: "/page6.png", alt: "CV Template 6" },
+    { src: "/page7.png", alt: "CV Template 7" },
+    { src: "/page8.png", alt: "CV Template 8" },
+    { src: "/page9.png", alt: "CV Template 9" },
+
+
+
   ]
 
   useEffect(() => {

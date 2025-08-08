@@ -6,7 +6,10 @@ import jwt from "jsonwebtoken"
 import { Createfiles, saveDataUser } from "@/lib/logic"
 import { getClientIP, canGuestCreateCV, markGuestCVCreated } from "@/lib/guest-utils"
 import { promptIA } from "@/lib/prompt"
-import generateResponse from "@/lib/ai"
+//import generateResponse from "@/lib/ai"
+import prisma from "@/lib/prisma"
+import { Azure_generateLatex } from "@/lib/azureai"
+//import { json } from "stream/consumers"
 
 const execAsync = promisify(exec)
 
@@ -59,11 +62,22 @@ export async function POST(req: NextRequest) {
         )
       }
     }
-
+    const user = await prisma.user.findUnique({ where: { id: userId || -1 } })
+    
     // Validate the request body
     const body = await req.json()
     const cvData = JSON.parse(body?.data || "{}")
     const type = body?.type || ""
+    if(type == "cv" && isAuthenticated && user) {
+      
+      if(!user.hasSubscription && user.freeTrialUsed <1) {
+        return NextResponse.json(
+          { error: "Free trial already used. Please subscribe to continue." },
+          { status: 403 },
+        )
+
+      }
+    }
     const filename = body?.filename || "cv"
     const cvId = body?.cvId ? parseInt(body.cvId, 10) : null
     const { tempDir, texFilePath, pdfFilePath } = Createfiles(filename)
@@ -98,7 +112,19 @@ export async function POST(req: NextRequest) {
     if (!isAuthenticated) {
       const ip = await getClientIP()
       await markGuestCVCreated(ip)
+    }else {
+      if( user && !user.hasSubscription) {
+      const dec_or_inc = type === "cv" ? 1 : 0
+    await prisma.user.update({
+      where: { id: userId || -1 },
+      data: {
+        freeTrialUsed: user.freeTrialUsed  - dec_or_inc, // Decrement free trial usage only for CVs
+      },
+    })
     }
+    }
+    
+    
 
     // Read the compiled PDF file
     const pdfBuffer = await fs.readFile(pdfFilePath);
@@ -146,7 +172,8 @@ const GenerateAndCompileLaTeXDocument = async (
   try {
     // If latex is not provided, generate it using the AI
     if (latex.length === 0) {
-      latex = await generateResponse(prompt, inputData);
+      latex = await Azure_generateLatex(prompt, inputData) || ''
+      console.log(latex)
     }
 
     // Clean up the latex string
@@ -185,7 +212,7 @@ const GenerateAndCompileLaTeXDocument = async (
         tempDir,
         newPrompt,
         inputData,
-        await generateResponse(newPrompt, inputData), // Generate new LaTeX for the retry
+        await Azure_generateLatex(newPrompt, inputData) || '', // Generate new LaTeX for the retry
         retryCount + 1
       );
     } else {
