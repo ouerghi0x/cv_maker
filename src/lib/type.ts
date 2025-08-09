@@ -15,6 +15,15 @@ type Education = {
   yearStarted: string
   yearOfGraduation: string
 }
+export type CVItem = {
+  id: number;
+  cvType: string;
+  createdAt: Date;
+  coverLatex: string | null;
+  cvlatex: string | null;
+  pdfcvUrl: string | null;
+  pdfcoverUrl: string | null;
+};
 
 type Experience = {
   company: string

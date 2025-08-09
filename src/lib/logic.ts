@@ -1,7 +1,10 @@
 import path from "path";
 import prisma from "./prisma";
 import { CVData } from "./type";
-async function saveDataUser(userId: number, cvData: CVData, pdftype: "cv" | "cover" = "cv",pdfpath:string = "",cvId: number | null = null) {
+import { NextRequest } from "next/server";
+import jwt from "jsonwebtoken"
+
+async function saveDataUser(userId: number, cvData: CVData, pdftype: "cv" | "cover" = "cv",pdfpath:string = "",cvId: number | null = null,latex:string) {
   try {
 
     const commonData = {
@@ -15,11 +18,14 @@ async function saveDataUser(userId: number, cvData: CVData, pdftype: "cv" | "cov
       projects: cvData.projects,
       certifications: cvData.certifications,
       languages: cvData.languages,
+      Cvlatex: pdftype === "cv" ? latex : null,
+      CoverLatex: pdftype === "cover" ? latex : null,
+
     };
     // Check if cvId exists in cvData
     let cv = null;
     if (cvId) {
-      const updateData: Partial<typeof commonData & { pdfcvUrl?: string; pdfcoverUrl?: string }> = { ...commonData };
+      const updateData: Partial<typeof commonData & { pdfcvUrl?: string; pdfcoverUrl?: string ; }> = { ...commonData };
 
       
 
@@ -27,18 +33,19 @@ async function saveDataUser(userId: number, cvData: CVData, pdftype: "cv" | "cov
         where: { id: cvId },
         data: updateData,
       });
-      console.log(`CV with ID ${cvId} updated successfully.`);
+      
     } else {
       const createData = {
         ...commonData,
         pdfcvUrl: pdftype === "cv" ? pdfpath : null,
         pdfcoverUrl: pdftype === "cover" ? pdfpath : null,
+        
       };
 
       cv = await prisma.cV.create({
         data: createData,
       });
-      console.log("New CV created successfully.");
+      
     }
 
     return cv;
@@ -57,5 +64,23 @@ function Createfiles(filename: string = "main") {
   return { tempDir, texFilePath, pdfFilePath }
 }
 
+export function GetUser(req: NextRequest) {
+  const token = req.cookies.get('auth')?.value
+  console.log(token)
+  let userId: number | null = null
+  let isAuthenticated = false
+  // Check if user is authenticated
+  if (token) {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET as string)
+      const { userId: authUserId } = payload as { userId: number} 
+      userId = authUserId
+      isAuthenticated = true
+    } catch {
+      // Token invalid, treat as guest
+    }
+  }
+  return { isAuthenticated, userId }
+}
 
 export { saveDataUser,Createfiles };

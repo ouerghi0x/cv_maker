@@ -54,6 +54,10 @@ export default function Navigation() {
             <Link href="/makercv" className="text-blue-600 font-medium">
               MakerCV
             </Link>
+            <Link href="/makercv/my-cvs" className="text-blue-600 font-medium">
+              My CVs
+            </Link>
+
           </div>
 
           {/* Desktop Auth Buttons or User Info */}
@@ -108,7 +112,9 @@ export default function Navigation() {
               <Link href="/makercv" className="text-blue-600 font-medium" onClick={() => setMobileMenuOpen(false)}>
                 MakerCV
               </Link>
-
+               <Link href="/makercv/my-cvs" className=" font-medium">
+              My CVs
+              </Link>
               {/* Mobile Auth Section */}
               <div className="pt-4 border-t space-y-3">
                 {user ? (

@@ -2,8 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { promises as fs } from "fs"
 import { exec } from "child_process"
 import { promisify } from "util"
-import jwt from "jsonwebtoken"
-import { Createfiles, saveDataUser } from "@/lib/logic"
+import { Createfiles, GetUser, saveDataUser } from "@/lib/logic"
 import { getClientIP, canGuestCreateCV, markGuestCVCreated } from "@/lib/guest-utils"
 import { promptIA } from "@/lib/prompt"
 //import generateResponse from "@/lib/ai"
@@ -29,21 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server configuration error: Gemini API key is missing." }, { status: 500 })
     }
 
-    const token = req.cookies.get("auth")?.value
-    let userId: number | null = null
-    let isAuthenticated = false
-
-    // Check if user is authenticated
-    if (token) {
-      try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET as string)
-        const { userId: authUserId } = payload as { userId: number }
-        userId = authUserId
-        isAuthenticated = true
-      } catch {
-        // Token invalid, treat as guest
-      }
-    }
+    const  { isAuthenticated, userId }: { isAuthenticated: boolean; userId: number | null } = GetUser(req)
 
     // Handle guest user restrictions
     if (!isAuthenticated) {
@@ -84,10 +69,7 @@ export async function POST(req: NextRequest) {
     //tempDiror = tempDir // Store tempDir for cleanup later
     const prompt = body?.prompt || promptIntro
     let cv = null ;
-    // Save CV for authenticated users
-    if (isAuthenticated && userId && type.trim() != "") {
-      cv= await saveDataUser(userId, cvData,type,pdfFilePath,cvId)
-    }
+    
 
     const inputData = body?.data
     
@@ -102,12 +84,15 @@ export async function POST(req: NextRequest) {
     
     
     // Generate and compile the LaTeX document
-    await GenerateAndCompileLaTeXDocument(
+    const latex=await GenerateAndCompileLaTeXDocument(
       texFilePath,
       tempDir,
       prompt,
       inputData
     );
+    if (isAuthenticated && userId && type.trim() != "") {
+      cv= await saveDataUser(userId, cvData,type,pdfFilePath,cvId,latex)
+    }
 
     if (!isAuthenticated) {
       const ip = await getClientIP()
@@ -222,3 +207,4 @@ const GenerateAndCompileLaTeXDocument = async (
     }
   }
 };
+

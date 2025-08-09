@@ -51,6 +51,8 @@ model CV {
   createdAt   DateTime @default(now())
   pdfcvUrl      String?  // Optional URL for the generated PDF
   pdfcoverUrl String? // Optional URL for the generated cover letter PDF
+  Cvlatex String?
+  CoverLatex String?
 
 }
 
