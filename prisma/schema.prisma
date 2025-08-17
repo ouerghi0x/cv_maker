@@ -35,6 +35,27 @@ model Subscription {
 
   @@index([userId, status])
 }
+model Keywords {
+  id Int @id @default(autoincrement())
+  cvid Int @unique
+  keywords String
+  location String
+  cv CV @relation(fields: [cvid], references: [id])
+  job Job[]
+}
+model Job {
+  id            Int       @id @default(autoincrement())
+  idkeywords    Int       // removed @unique
+  title         String
+  company       String
+  logo_url      String?
+  description   String?
+  link          String?
+  newDescription String?
+  score         Int?
+  keywords      Keywords  @relation(fields: [idkeywords], references: [id])
+}
+
 model CV {
   id          Int      @id @default(autoincrement())
   user        User     @relation(fields: [userId], references: [id])
@@ -53,6 +74,7 @@ model CV {
   pdfcoverUrl String? // Optional URL for the generated cover letter PDF
   Cvlatex String?
   CoverLatex String?
+  keywords       Keywords?
 
 }
 

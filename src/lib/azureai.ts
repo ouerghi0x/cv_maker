@@ -4,10 +4,9 @@ const endpoint = "https://moham-mdvx8nav-eastus2.cognitiveservices.azure.com/";
 const modelName = "gpt-4.1-mini";
 const deployment = "gpt-4.1-mini";
 
-export async function Azure_generateLatex(prompt:string,data:string) {
-
+export async function Azure_generate(prompt:string,data:string) {
+  
   const apiKey = process.env.azure_openai
-
   const apiVersion = "2024-04-01-preview";
   const options = { endpoint, apiKey, deployment, apiVersion }
 

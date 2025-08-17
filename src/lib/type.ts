@@ -15,6 +15,21 @@ type Education = {
   yearStarted: string
   yearOfGraduation: string
 }
+export type Job = {
+  title: string;
+  company: string;
+  logo_url?: string;
+  description: string;
+  link?: string;
+  newDescription?:string;
+  score?:number;
+};
+export type Key = {
+  keywords: string;
+  location: string;
+  cvLatex?: string;
+};
+
 export type CVItem = {
   id: number;
   cvType: string;
@@ -23,6 +38,8 @@ export type CVItem = {
   cvlatex: string | null;
   pdfcvUrl: string | null;
   pdfcoverUrl: string | null;
+  keywords:string|null;
+  location:string |null;
 };
 
 type Experience = {

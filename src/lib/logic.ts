@@ -4,6 +4,19 @@ import { CVData } from "./type";
 import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken"
 
+
+const sanitizeAIResponse = (response: string) => {
+  if(response == null || response ==undefined) return 
+  if (!response || response.length === 0) return null;
+  try {
+    // Remove markdown code block fences and "json" label
+    const cleaned = response.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (err) {
+    console.error("sanitizeAIResponse failed:", err, response);
+    return null;
+  }
+};
 async function saveDataUser(userId: number, cvData: CVData, pdftype: "cv" | "cover" = "cv",pdfpath:string = "",cvId: number | null = null,latex:string) {
   try {
 
@@ -83,4 +96,4 @@ export function GetUser(req: NextRequest) {
   return { isAuthenticated, userId }
 }
 
-export { saveDataUser,Createfiles };
+export { saveDataUser,Createfiles ,sanitizeAIResponse};

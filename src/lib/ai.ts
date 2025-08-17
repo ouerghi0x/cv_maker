@@ -1,18 +1,21 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { randomInt } from "crypto";
 
 const keys = [
-  process.env.GEMINI_API_KEY,
-  process.env.GEMINI_API_KEY2,
-  process.env.GEMINI_API_KEY1,
+  "AIzaSyAbj9NTxB1H2zjJxdwLDPXg3B8q3fLmGto",
+  "AIzaSyB8aDnGpvRqwir2k3DaIoVK_5yiVdYANtw",
+  "AIzaSyDJuRWxkvBskaMhBNLhgzir_RuTMel7jT8",
 ]
-
 
 async function generateResponse(
   prompt: string,
   inputData: string,
-  index: number = randomInt(0, keys.length)
+  index?: number
 ): Promise<string> {
+  // Pick random index if none is provided
+  if (index === undefined) {
+    index = Math.floor(Math.random() * keys.length);
+  }
+
   const apiKey = keys[index];
 
   if (!apiKey) {

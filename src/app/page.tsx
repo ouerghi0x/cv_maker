@@ -24,7 +24,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import CVGallery from "@/components/ui/cvgallery"
 import MyD17Info from "@/components/payment/d17info"
-
+import Image from "next/image";
 export default function LandingPage() {
   const [user, setUser] = useState<{ email: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -67,7 +67,12 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                    <Image
+                      src="/favicon.ico"  
+                      alt="MakerCV Logo"
+                      width={70}
+                      height={32}
+                    />
               <span className="text-lg sm:text-2xl font-bold text-gray-900">MakerCV</span>
             </div>
 

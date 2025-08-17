@@ -7,7 +7,7 @@ import { getClientIP, canGuestCreateCV, markGuestCVCreated } from "@/lib/guest-u
 import { promptIA } from "@/lib/prompt"
 //import generateResponse from "@/lib/ai"
 import prisma from "@/lib/prisma"
-import { Azure_generateLatex } from "@/lib/azureai"
+import { Azure_generate } from "@/lib/azureai"
 //import { json } from "stream/consumers"
 
 const execAsync = promisify(exec)
@@ -157,7 +157,7 @@ const GenerateAndCompileLaTeXDocument = async (
   try {
     // If latex is not provided, generate it using the AI
     if (latex.length === 0) {
-      latex = await Azure_generateLatex(prompt, inputData) || ''
+      latex = await Azure_generate(prompt, inputData) || ''
       console.log(latex)
     }
 
@@ -197,7 +197,7 @@ const GenerateAndCompileLaTeXDocument = async (
         tempDir,
         newPrompt,
         inputData,
-        await Azure_generateLatex(newPrompt, inputData) || '', // Generate new LaTeX for the retry
+        await Azure_generate(newPrompt, inputData) || '', // Generate new LaTeX for the retry
         retryCount + 1
       );
     } else {

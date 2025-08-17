@@ -44,6 +44,7 @@ import GuestRestrictionModal from "./guest-restriction-modal"
 import { promptIA } from "@/lib/prompt"
 import SelectSource from "./ui/select_source"
 import EmailTemplate from "./EmailTemp/email-template"
+import { InputJson } from "./input_json"
 
 const CV_DATA_STORAGE_KEY = "cv_builder_data"
 const CURRENT_STEP_STORAGE_KEY = "cv_builder_current_step"
@@ -157,6 +158,7 @@ export default function CvProcess() {
   const [showContentDescription, setShowContentDescription] = useState(false)
   const [cvId, setCvId] = useState<number | null>(null) // State to hold CV ID if needed
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [show_json_input,set_Show_json]=useState<boolean>(false)
   const [guestRestriction, setGuestRestriction] = useState<{
     isRestricted: boolean
     guestInfo?: GuestInfo // Using the defined GuestInfo interface
@@ -278,7 +280,7 @@ export default function CvProcess() {
 
     switch (step.component) {
       case "type-cv":
-        console.log("Validating CV Type:", cvData.cvType) // Debug log
+        
         if (!cvData.cvType || cvData.cvType.trim() === "") {
           errors.push("CV Type is required")
         }
@@ -386,7 +388,7 @@ export default function CvProcess() {
       setValidationErrors(["No PDF available to download. Please generate a CV first."])
       return
     }
-    console.log(pdfBlob.length)
+    
     if (pdfBlob[i].blobfile) {
       const url = URL.createObjectURL(pdfBlob[i].blobfile as Blob)
       const a = document.createElement("a")
@@ -580,6 +582,28 @@ export default function CvProcess() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+     <button
+      onClick={() => set_Show_json(!show_json_input)}
+      className="
+        flex items-center justify-center
+        px-5 py-2 mb-4
+        rounded-xl
+        bg-gradient-to-r from-blue-500 to-blue-600
+        text-white font-semibold
+        shadow-md
+        hover:from-blue-600 hover:to-blue-700
+        active:scale-95 active:shadow-sm
+        transition-all duration-300
+        text-sm
+      "
+      style={{ alignSelf: "flex-start", position: "relative", left: "50px" }}
+    >
+      {show_json_input ? "Hide JSON Input" : "Show JSON Input"}
+    </button>
+
+
+      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Horizontal Progress Bar (Always visible at the top) */}
         {pdfBlob.length  == 0 && (
@@ -980,6 +1004,8 @@ export default function CvProcess() {
         onClose={() => setGuestRestriction((prev) => ({ ...prev, showModal: false }))}
         guestInfo={guestRestriction.guestInfo}
       />
+      {show_json_input&&<InputJson onChangeCV={setCvData} hide={set_Show_json} setCurrentStep={setCurrentStep}/>}
+
     </div>
   )
 }

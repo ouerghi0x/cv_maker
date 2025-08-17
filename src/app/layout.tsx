@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://makercv.com",
   },
   icons: {
-    icon: "/logo.avif", // ✅ correct path
+    icon: "/favicon.ico", // ✅ correct path
   },
   twitter: {
     card: "summary_large_image",
